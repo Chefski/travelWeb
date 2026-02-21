@@ -56,7 +56,8 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
       reduce: (acc, props) => {
         for (const key of Object.keys(props.dayColorCounts)) {
           const day = Number(key)
-          acc.dayColorCounts[day] = (acc.dayColorCounts[day] || 0) + props.dayColorCounts[day]
+          const inc = props.dayColorCounts[day] ?? 0
+          acc.dayColorCounts[day] = (acc.dayColorCounts[day] ?? 0) + inc
         }
       },
     })
@@ -90,9 +91,17 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
   // --- DOM Element Builders ---
 
   function createPointEl(dayIndex: number, order: number): HTMLElement {
-    const el = document.createElement('div')
+    // IMPORTANT: Do not set/animate `transform` on the root marker element.
+    // Mapbox GL uses `transform` on the marker root to position it; overwriting it
+    // can snap markers to the map container's top-left.
+    const root = document.createElement('div')
+    const anim = document.createElement('div')
+    const ui = document.createElement('div')
     const color = DAY_COLORS[dayIndex % DAY_COLORS.length]
-    Object.assign(el.style, {
+    Object.assign(anim.style, {
+      willChange: 'transform, opacity',
+    })
+    Object.assign(ui.style, {
       width: '28px',
       height: '28px',
       borderRadius: '50%',
@@ -107,10 +116,12 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
       border: '2px solid white',
       boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
       cursor: 'pointer',
-      willChange: 'transform, opacity',
     })
-    el.textContent = String(order + 1)
-    return el
+    ui.textContent = String(order + 1)
+
+    anim.appendChild(ui)
+    root.appendChild(anim)
+    return root
   }
 
   function conicGradient(counts: Record<number, number>): string {
@@ -119,7 +130,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
       .sort((a, b) => a.day - b.day)
     const total = entries.reduce((s, e) => s + e.count, 0)
     if (entries.length <= 1) {
-      return DAY_COLORS[(entries[0]?.day ?? 0) % DAY_COLORS.length]
+      return DAY_COLORS[(entries[0]?.day ?? 0) % DAY_COLORS.length] ?? DAY_COLORS[0] ?? '#3B82F6'
     }
     let angle = 0
     const stops: string[] = []
@@ -133,7 +144,13 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
   }
 
   function createClusterEl(count: number, dayColorCounts: Record<number, number>): HTMLElement {
+    // Root is controlled by Mapbox's positioning transform.
+    const root = document.createElement('div')
+    const anim = document.createElement('div')
     const el = document.createElement('div')
+    Object.assign(anim.style, {
+      willChange: 'transform, opacity',
+    })
     Object.assign(el.style, {
       width: '44px',
       height: '44px',
@@ -143,7 +160,6 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
       alignItems: 'center',
       justifyContent: 'center',
       cursor: 'pointer',
-      willChange: 'transform, opacity',
     })
     const inner = document.createElement('div')
     Object.assign(inner.style, {
@@ -163,6 +179,8 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
     })
     inner.textContent = String(count)
     el.appendChild(inner)
+    anim.appendChild(el)
+    root.appendChild(anim)
 
     // Idle pulse
     el.animate(
@@ -174,10 +192,11 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
     )
 
     // Hover scale
+    // Hover scale on the UI element only (not the root marker element).
     el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.15)' })
     el.addEventListener('mouseleave', () => { el.style.transform = '' })
 
-    return el
+    return root
   }
 
   // --- Marker Factory ---
@@ -216,6 +235,14 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
 
   // --- Animations ---
 
+  function animTarget(marker: mapboxgl.Marker): HTMLElement {
+    // Our marker element is: root -> anim -> ui
+    // Animate the `anim` wrapper so Mapbox's root transform stays intact.
+    const root = marker.getElement()
+    const t = root.firstElementChild
+    return (t as HTMLElement) || root
+  }
+
   function pixelOffset(map: mapboxgl.Map, from: [number, number], to: [number, number]) {
     const a = map.project(from)
     const b = map.project(to)
@@ -226,7 +253,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
     if (!shouldAnimate) return
     const ll = marker.getLngLat()
     const { x, y } = pixelOffset(map, origin, [ll.lng, ll.lat])
-    marker.getElement().animate(
+    animTarget(marker).animate(
       [
         { transform: `translate(${x}px,${y}px) scale(0)`, opacity: '0' },
         { transform: 'translate(0,0) scale(1)', opacity: '1' },
@@ -239,7 +266,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
     if (!shouldAnimate) { marker.remove(); return }
     const ll = marker.getLngLat()
     const { x, y } = pixelOffset(map, target, [ll.lng, ll.lat])
-    const a = marker.getElement().animate(
+    const a = animTarget(marker).animate(
       [
         { transform: 'translate(0,0) scale(1)', opacity: '1' },
         { transform: `translate(${x}px,${y}px) scale(0)`, opacity: '0' },
@@ -251,7 +278,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
 
   function animIn(marker: mapboxgl.Marker) {
     if (!shouldAnimate) return
-    marker.getElement().animate(
+    animTarget(marker).animate(
       [
         { transform: 'scale(0)', opacity: '0' },
         { transform: 'scale(1)', opacity: '1' },
@@ -262,7 +289,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
 
   function animOut(marker: mapboxgl.Marker) {
     if (!shouldAnimate) { marker.remove(); return }
-    const a = marker.getElement().animate(
+    const a = animTarget(marker).animate(
       [
         { transform: 'scale(1)', opacity: '1' },
         { transform: 'scale(0)', opacity: '0' },
@@ -279,7 +306,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
     candidates: Array<{ lngLat: [number, number] }>,
   ): [number, number] | null {
     if (!candidates.length) return null
-    let best = candidates[0]
+    let best = candidates[0]!
     let min = Infinity
     for (const c of candidates) {
       const dx = c.lngLat[0] - lngLat[0]
@@ -297,6 +324,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
     if (!map || !index) return
 
     const b = map.getBounds()
+    if (!b) return
     const bbox: [number, number, number, number] = [
       b.getWest(), b.getSouth(), b.getEast(), b.getNorth(),
     ]
@@ -415,7 +443,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
   function fitAllPlaces(places: Place[]) {
     if (!mapRef.value || !places.length) return
     if (places.length === 1) {
-      flyToPlace(places[0].coordinates)
+      flyToPlace(places[0]!.coordinates)
       return
     }
     const bounds = new mapboxgl.LngLatBounds()
