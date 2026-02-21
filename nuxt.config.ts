@@ -1,5 +1,13 @@
 export default defineNuxtConfig({
-  ssr: false,
+  ssr: true,
+
+  nitro: {
+    preset: 'github-pages'
+  },
+
+  app: {
+    baseURL: '/travelWeb/'
+  },
 
   modules: [
     '@nuxtjs/tailwindcss',
