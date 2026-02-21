@@ -16,6 +16,8 @@ onMounted(() => {
     zoom: 2
   });
 });
+
+defineExpose({ map });
 </script>
 
 <template>
