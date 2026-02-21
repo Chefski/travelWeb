@@ -4,6 +4,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN;
+if (!mapboxToken) console.warn('[WorldMap] VITE_MAPBOX_TOKEN is not set. Map will not load.');
 
 const map = ref<mapboxgl.Map | null>(null);
 onMounted(() => {

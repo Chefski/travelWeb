@@ -9,6 +9,7 @@ export function useMapboxSearch() {
   const sessionToken = ref(crypto.randomUUID())
 
   const token = import.meta.env.VITE_MAPBOX_TOKEN
+  if (!token) console.warn('[useMapboxSearch] VITE_MAPBOX_TOKEN is not set. Mapbox search will not work.')
 
   async function fetchSuggestions(q: string) {
     if (!q || q.length < 2) {

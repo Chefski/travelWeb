@@ -382,16 +382,6 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
 
   // --- Public API ---
 
-  function addMarker(_place: Place, _dayIndex: number) {
-    // Data flows through syncMarkers; retained for API compatibility
-  }
-
-  function clearAllMarkers() {
-    for (const { marker } of rendered.values()) marker.remove()
-    rendered.clear()
-    if (index) index.load([])
-  }
-
   function syncMarkers(days: Array<{ dayIndex: number; places: Place[] }>) {
     ensureIndex()
     const map = mapRef.value
@@ -451,5 +441,5 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
     mapRef.value.fitBounds(bounds, { padding: 60, duration: 1500 })
   }
 
-  return { addMarker, clearAllMarkers, syncMarkers, flyToPlace, fitAllPlaces }
+  return { syncMarkers, flyToPlace, fitAllPlaces }
 }

@@ -73,12 +73,12 @@ function onNewTrip() {
 
     <div class="flex h-full">
       <!-- Left panel -->
-      <div class="w-[45%] xl:w-[40%] flex flex-col min-h-0 px-6 py-6 border-r border-gray-200">
+      <div class="w-[45%] xl:w-[40%] flex flex-col gap-3 min-h-0 px-6 py-6 border-r border-gray-200">
         <template v-if="store.trip">
           <TripHeader @new-trip="onNewTrip" @edit-trip="showEditDialog = true" />
-          <DayTabs class="mt-3" />
-          <PlaceSearch class="mt-3" @place-selected="onPlaceSelected" />
-          <ScrollArea class="flex-1 mt-3">
+          <DayTabs />
+          <PlaceSearch @place-selected="onPlaceSelected" />
+          <ScrollArea class="flex-1">
             <PlaceList @place-clicked="onPlaceClicked" />
           </ScrollArea>
         </template>

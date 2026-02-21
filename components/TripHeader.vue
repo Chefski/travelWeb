@@ -48,7 +48,12 @@ const dateDisplay = computed(() => {
   <div v-if="store.trip">
     <div
       class="group relative rounded-xl overflow-hidden h-[180px] cursor-pointer"
+      role="button"
+      tabindex="0"
+      aria-label="Edit trip cover image"
       @click="emit('edit-trip')"
+      @keydown.enter="emit('edit-trip')"
+      @keydown.space.prevent="emit('edit-trip')"
     >
       <img
         v-if="hasImage"
@@ -72,10 +77,10 @@ const dateDisplay = computed(() => {
         <h2 class="text-2xl font-semibold">{{ store.trip.name }}</h2>
         <div class="flex items-center gap-2">
           <Badge variant="secondary">{{ store.trip.days.length }} days</Badge>
-          <Button variant="ghost" size="icon" class="h-8 w-8" @click="emit('edit-trip')" title="Edit trip">
+          <Button variant="ghost" size="icon" class="h-8 w-8" @click="emit('edit-trip')" aria-label="Edit trip">
             <PencilIcon class="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" class="h-8 w-8" @click="emit('new-trip')">
+          <Button variant="ghost" size="icon" class="h-8 w-8" @click="emit('new-trip')" aria-label="Start new trip">
             <RotateCcwIcon class="h-4 w-4" />
           </Button>
         </div>

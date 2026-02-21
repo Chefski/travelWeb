@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore, acceptHMRUpdate } from 'pinia'
 import { computed, ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import type { Trip, TripDay, Place } from '~/types/trip'
@@ -124,3 +124,7 @@ export const useTripStore = defineStore('trip', () => {
     clearTrip,
   }
 })
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useTripStore, import.meta.hot))
+}

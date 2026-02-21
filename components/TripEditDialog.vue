@@ -132,16 +132,16 @@ function onSave() {
 
       <div class="grid gap-4 py-4">
         <div class="grid gap-2">
-          <label class="text-sm font-medium">Trip name</label>
-          <Input v-model="tripName" placeholder="e.g. Summer in Italy" />
+          <label for="edit-trip-name" class="text-sm font-medium">Trip name</label>
+          <Input id="edit-trip-name" v-model="tripName" placeholder="e.g. Summer in Italy" />
         </div>
 
         <div class="grid gap-2">
-          <label class="text-sm font-medium">Travel dates</label>
+          <label for="edit-trip-dates" class="text-sm font-medium">Travel dates</label>
           <Popover>
             <PopoverTrigger as-child>
-              <Button variant="outline" class="justify-start text-left font-normal">
-                <CalendarIcon class="mr-2 h-4 w-4" />
+              <Button id="edit-trip-dates" variant="outline" class="justify-start text-left font-normal">
+                <CalendarIcon class="h-4 w-4" />
                 {{ dateLabel }}
               </Button>
             </PopoverTrigger>
@@ -156,7 +156,7 @@ function onSave() {
         </div>
 
         <div class="grid gap-2">
-          <label class="text-sm font-medium">Cover image <span class="text-muted-foreground">(optional)</span></label>
+          <label for="edit-trip-cover" class="text-sm font-medium">Cover image <span class="text-muted-foreground">(optional)</span></label>
 
           <div v-if="imagePreview || (coverImage && !coverImage.startsWith('data:'))"
                class="relative rounded-lg overflow-hidden h-[120px]">
@@ -165,6 +165,7 @@ function onSave() {
                  alt="Preview" />
             <Button variant="destructive" size="icon"
                     class="absolute top-2 right-2 h-6 w-6"
+                    aria-label="Remove cover image"
                     @click="clearImage">
               <XIcon class="h-3 w-3" />
             </Button>
@@ -175,10 +176,10 @@ function onSave() {
                     :disabled="isProcessingImage"
                     type="button"
                     @click="fileInputRef?.click()">
-              <ImageIcon class="h-4 w-4 mr-1" />
+              <ImageIcon class="h-4 w-4" />
               {{ isProcessingImage ? 'Processing...' : 'Upload' }}
             </Button>
-            <Input v-model="coverImage"
+            <Input id="edit-trip-cover" v-model="coverImage"
                    placeholder="or paste image URL..."
                    class="flex-1"
                    :disabled="isProcessingImage" />
