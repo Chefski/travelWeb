@@ -10,6 +10,9 @@ interface PointProps {
   order: number
   name: string
   address: string
+  notes: string
+  estimatedTime: string
+  category: string
 }
 
 interface ClusterProps {
@@ -71,13 +74,15 @@ export function nearest(
   return best.lngLat
 }
 
-export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
+export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: (placeId: string, dayIndex: number) => void) {
   let index: Supercluster<PointProps, ClusterProps> | null = null
   const rendered = new Map<string, RenderedEntry>()
   let rafId = 0
   let boundMap: mapboxgl.Map | null = null
   let shouldAnimate = true
+  let currentSelectedDay: number | undefined
   let pendingLoad = false
+  const activeRouteDays = new Set<number>()
 
   // --- Supercluster ---
 
@@ -125,7 +130,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
 
   // --- DOM Element Builders ---
 
-  function createPointEl(dayIndex: number, order: number): HTMLElement {
+  function createPointEl(dayIndex: number, order: number, isSelected: boolean): HTMLElement {
     // IMPORTANT: Do not set/animate `transform` on the root marker element.
     // Mapbox GL uses `transform` on the marker root to position it; overwriting it
     // can snap markers to the map container's top-left.
@@ -135,6 +140,9 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
     const color = DAY_COLORS[dayIndex % DAY_COLORS.length]
     Object.assign(anim.style, {
       willChange: 'transform, opacity',
+      opacity: isSelected ? '1' : '0.35',
+      transform: isSelected ? 'scale(1)' : 'scale(0.8)',
+      transition: 'opacity 0.3s ease, transform 0.3s ease',
     })
     Object.assign(ui.style, {
       width: '28px',
@@ -234,11 +242,23 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
     }
 
     const props = feature.properties
-    const el = createPointEl(props.dayIndex, props.order)
-    const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
-      `<div style="font-family:'Outfit',sans-serif;padding:4px">
-        <strong>${escapeHtml(props.name)}</strong>
-        <p style="margin:2px 0 0;font-size:12px;color:#666">${escapeHtml(props.address)}</p>
+    const isSelected = currentSelectedDay === undefined || props.dayIndex === currentSelectedDay
+    const el = createPointEl(props.dayIndex, props.order, isSelected)
+
+    el.addEventListener('click', () => {
+      onMarkerClick?.(props.placeId, props.dayIndex)
+    })
+
+    const popup = new mapboxgl.Popup({ offset: 25, closeButton: false, maxWidth: '250px' }).setHTML(
+      `<div style="font-family:'Outfit',sans-serif;padding:6px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span style="background:${DAY_COLORS[props.dayIndex % DAY_COLORS.length]};color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${props.order + 1}</span>
+          <strong style="font-size:13px">${escapeHtml(props.name)}</strong>
+        </div>
+        <p style="margin:0;font-size:11px;color:#666">${escapeHtml(props.address)}</p>
+        ${props.category ? `<span style="display:inline-block;margin-top:4px;padding:1px 6px;border-radius:8px;background:#f1f5f9;font-size:10px;color:#475569">${escapeHtml(props.category)}</span>` : ''}
+        ${props.estimatedTime ? `<p style="margin:4px 0 0;font-size:11px;color:#666">⏱ ${escapeHtml(props.estimatedTime)}</p>` : ''}
+        ${props.notes ? `<p style="margin:4px 0 0;font-size:11px;color:#888;font-style:italic">${escapeHtml(props.notes)}</p>` : ''}
       </div>`,
     )
     return new mapboxgl.Marker({ element: el }).setLngLat(coords).setPopup(popup)
@@ -378,9 +398,61 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
     }
   }
 
+  // --- Route Lines ---
+
+  function clearRouteLines(map: mapboxgl.Map) {
+    for (const dayIndex of activeRouteDays) {
+      const layerId = `route-layer-${dayIndex}`
+      const sourceId = `route-day-${dayIndex}`
+      if (map.getLayer(layerId)) map.removeLayer(layerId)
+      if (map.getSource(sourceId)) map.removeSource(sourceId)
+    }
+    activeRouteDays.clear()
+  }
+
+  function syncRouteLines(map: mapboxgl.Map, days: Array<{ dayIndex: number; places: Place[] }>, selectedDayIndex?: number) {
+    clearRouteLines(map)
+
+    for (const { dayIndex, places } of days) {
+      if (places.length < 2) continue
+
+      const coordinates = places
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .map(p => p.coordinates)
+
+      const sourceId = `route-day-${dayIndex}`
+      const layerId = `route-layer-${dayIndex}`
+
+      map.addSource(sourceId, {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: { type: 'LineString', coordinates },
+        },
+      })
+
+      map.addLayer({
+        id: layerId,
+        type: 'line',
+        source: sourceId,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': DAY_COLORS[dayIndex % DAY_COLORS.length],
+          'line-width': selectedDayIndex !== undefined && dayIndex === selectedDayIndex ? 4 : 2,
+          'line-dasharray': selectedDayIndex !== undefined && dayIndex === selectedDayIndex ? [1, 0] : [2, 2],
+          'line-opacity': selectedDayIndex !== undefined ? (dayIndex === selectedDayIndex ? 0.9 : 0.25) : 0.7,
+        },
+      })
+
+      activeRouteDays.add(dayIndex)
+    }
+  }
+
   // --- Public API ---
 
-  function syncMarkers(days: Array<{ dayIndex: number; places: Place[] }>) {
+  function syncMarkers(days: Array<{ dayIndex: number; places: Place[] }>, selectedDayIndex?: number) {
     ensureIndex()
     const map = mapRef.value
 
@@ -397,11 +469,15 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
             order: place.order,
             name: place.name,
             address: place.address,
+            notes: place.notes || '',
+            estimatedTime: place.estimatedTime || '',
+            category: place.category || '',
           },
         })
       }
     }
     index!.load(features)
+    currentSelectedDay = selectedDayIndex
 
     if (!map) return
     bindEvents(map)
@@ -412,6 +488,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
 
     // Render without animation for data-driven updates
     if (map.loaded()) {
+      syncRouteLines(map, days, selectedDayIndex)
       shouldAnimate = false
       render()
       shouldAnimate = true
@@ -419,6 +496,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
       pendingLoad = true
       map.once('load', () => {
         pendingLoad = false
+        syncRouteLines(map!, days, selectedDayIndex)
         render()
       })
     }

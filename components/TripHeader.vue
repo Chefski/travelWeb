@@ -3,11 +3,13 @@ import { computed } from 'vue'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
-import { RotateCcwIcon, PencilIcon } from 'lucide-vue-next'
+import { FolderOpenIcon, PencilIcon, ShareIcon } from 'lucide-vue-next'
 import { useTripStore } from '~/stores/tripStore'
+import { useCountryFlag } from '~/composables/useCountryFlag'
 
 const store = useTripStore()
-const emit = defineEmits<{ 'new-trip': []; 'edit-trip': [] }>()
+const { flag } = useCountryFlag()
+const emit = defineEmits<{ 'new-trip': []; 'edit-trip': []; 'export-trip': [] }>()
 
 const GRADIENTS = [
   'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -34,6 +36,14 @@ const fallbackGradient = computed(() => {
   return GRADIENTS[Math.abs(hash) % GRADIENTS.length]
 })
 
+const progressPercent = computed(() => {
+  if (!store.trip) return 0
+  const total = store.trip.days.length
+  if (total === 0) return 0
+  const planned = store.trip.days.filter(d => d.places.length > 0).length
+  return Math.round((planned / total) * 100)
+})
+
 const dateDisplay = computed(() => {
   if (!store.trip) return ''
   const fmt = (d: string) => {
@@ -47,7 +57,7 @@ const dateDisplay = computed(() => {
 <template>
   <div v-if="store.trip">
     <div
-      class="group relative rounded-xl overflow-hidden h-[180px] cursor-pointer"
+      class="group relative rounded-xl overflow-hidden h-[120px] md:h-[180px] cursor-pointer"
       role="button"
       tabindex="0"
       aria-label="Edit trip cover image"
@@ -74,18 +84,27 @@ const dateDisplay = computed(() => {
     </div>
     <div class="mt-3">
       <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-semibold">{{ store.trip.name }}</h2>
+        <h2 class="text-xl md:text-2xl font-semibold">{{ flag }} {{ store.trip.name }}</h2>
         <div class="flex items-center gap-2">
-          <Badge variant="secondary">{{ store.trip.days.length }} days</Badge>
+          <Badge variant="secondary">{{ store.trip.days.length - 1 }}N {{ store.trip.days.length }}D</Badge>
+          <Button variant="ghost" size="icon" class="h-8 w-8" @click="emit('export-trip')" aria-label="Export trip">
+            <ShareIcon class="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" class="h-8 w-8" @click="emit('edit-trip')" aria-label="Edit trip">
             <PencilIcon class="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" class="h-8 w-8" @click="emit('new-trip')" aria-label="Start new trip">
-            <RotateCcwIcon class="h-4 w-4" />
+          <Button variant="ghost" size="icon" class="h-8 w-8" @click="emit('new-trip')" aria-label="My trips">
+            <FolderOpenIcon class="h-4 w-4" />
           </Button>
         </div>
       </div>
       <p class="text-sm text-muted-foreground mt-1">{{ dateDisplay }}</p>
+      <div class="w-full bg-muted rounded-full h-1 mt-2 overflow-hidden">
+        <div
+          class="h-full rounded-full transition-all duration-500 ease-out"
+          :style="{ width: progressPercent + '%', background: 'linear-gradient(90deg, hsl(var(--primary)), #22c55e)' }"
+        />
+      </div>
       <Separator class="mt-2" />
     </div>
   </div>

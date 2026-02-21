@@ -1,22 +1,76 @@
 <script setup lang="ts">
-import { ref, watch, computed, watchEffect } from 'vue'
+import { ref, watch, computed, watchEffect, onMounted } from 'vue'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'vue-sonner'
-import { MapIcon } from 'lucide-vue-next'
+import { MapIcon, ListIcon, SunIcon, MoonIcon, KeyboardIcon } from 'lucide-vue-next'
 import { useTripStore } from '~/stores/tripStore'
+import { useTripSharing } from '~/composables/useTripSharing'
 import { useMapMarkers } from '~/composables/useMapMarkers'
+import { useKeyboardShortcuts } from '~/composables/useKeyboardShortcuts'
 import type { Place } from '~/types/trip'
+import confetti from 'canvas-confetti'
 
 const store = useTripStore()
+const colorMode = useColorMode()
+
+// Check for shared trip in URL
+if (typeof window !== 'undefined') {
+  const { decodeTripFromUrl, clearShareHash } = useTripSharing()
+  const sharedTrip = decodeTripFromUrl()
+  if (sharedTrip) {
+    store.createTrip(sharedTrip.name, sharedTrip.startDate, sharedTrip.endDate)
+    if (store.trip) {
+      store.trip = { ...store.trip, days: sharedTrip.days }
+    }
+    clearShareHash()
+    toast(`Imported shared trip: "${sharedTrip.name}"`)
+  }
+}
+
+function toggleDarkMode() {
+  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+}
 
 const worldMapRef = ref<InstanceType<typeof WorldMap> | null>(null)
 const mapRef = computed(() => worldMapRef.value?.map ?? null)
-const { syncMarkers, flyToPlace, fitAllPlaces } = useMapMarkers(mapRef)
+const highlightedPlaceId = ref<string | null>(null)
+
+function onMarkerClicked(placeId: string, dayIndex: number) {
+  if (store.selectedDayIndex !== dayIndex) {
+    store.selectDay(dayIndex)
+  }
+  highlightedPlaceId.value = placeId
+  setTimeout(() => {
+    highlightedPlaceId.value = null
+  }, 2000)
+}
+
+const { syncMarkers, flyToPlace, fitAllPlaces } = useMapMarkers(mapRef, onMarkerClicked)
 
 const showSetupDialog = ref(!store.trip)
 const showEditDialog = ref(false)
+const showExportDialog = ref(false)
+const showShortcutsHelp = ref(false)
+const showTripSelector = ref(false)
+const showMap = ref(false)
+const placeSearchRef = ref<InstanceType<typeof PlaceSearch> | null>(null)
+
+const isLoaded = ref(false)
+onMounted(() => {
+  requestAnimationFrame(() => {
+    isLoaded.value = true
+  })
+})
+
+useKeyboardShortcuts({
+  onFocusSearch: () => placeSearchRef.value?.focus(),
+  onEditTrip: () => { showEditDialog.value = true },
+  onNewTrip,
+  onToggleExport: () => { showExportDialog.value = true },
+  showShortcutsHelp,
+})
 
 // Sync markers whenever trip data or map readiness changes
 watchEffect(() => {
@@ -32,7 +86,7 @@ watchEffect(() => {
     dayIndex: idx,
     places: day.places,
   }))
-  syncMarkers(allDayData)
+  syncMarkers(allDayData, store.selectedDayIndex)
 })
 
 // Fit map to current day's places when switching days
@@ -57,29 +111,63 @@ function onPlaceClicked(place: Place) {
 function onTripCreated() {
   showSetupDialog.value = false
   toast('Trip created! Start adding places.')
+  confetti({
+    particleCount: 100,
+    spread: 70,
+    origin: { y: 0.6 },
+    colors: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b'],
+  })
 }
 
 function onNewTrip() {
-  store.clearTrip()
+  showTripSelector.value = true
+}
+
+function onCreateNewFromSelector() {
   showSetupDialog.value = true
+}
+
+function onStyleChanged() {
+  if (!store.trip || !mapRef.value) return
+  const allDayData = store.trip.days.map((day, idx) => ({
+    dayIndex: idx,
+    places: day.places,
+  }))
+  syncMarkers(allDayData, store.selectedDayIndex)
 }
 </script>
 
 <template>
-  <div class="h-screen bg-white font-outfit overflow-hidden">
+  <div class="h-screen bg-background font-outfit overflow-hidden transition-all duration-700 ease-out" :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'">
     <Toaster position="top-right" />
     <TripSetupDialog v-model:open="showSetupDialog" @created="onTripCreated" />
     <TripEditDialog v-model:open="showEditDialog" />
+    <TripExport v-model:open="showExportDialog" />
+    <KeyboardShortcutsHelp v-model:open="showShortcutsHelp" />
+    <TripSelector v-model:open="showTripSelector" @create-new="onCreateNewFromSelector" />
 
     <div class="flex h-full">
       <!-- Left panel -->
-      <div class="w-[45%] xl:w-[40%] flex flex-col gap-3 min-h-0 px-6 py-6 border-r border-gray-200">
+      <div
+        class="w-full md:w-[45%] xl:w-[40%] flex flex-col gap-3 min-h-0 px-4 md:px-6 py-4 md:py-6 border-r border-border"
+        :class="{ 'hidden': showMap, 'flex': !showMap }"
+      >
+        <div class="flex justify-end">
+          <Button variant="ghost" size="icon" class="h-8 w-8" aria-label="Toggle dark mode" @click="toggleDarkMode">
+            <SunIcon v-if="colorMode.value === 'dark'" class="h-4 w-4" />
+            <MoonIcon v-else class="h-4 w-4" />
+          </Button>
+        </div>
+
         <template v-if="store.trip">
-          <TripHeader @new-trip="onNewTrip" @edit-trip="showEditDialog = true" />
+          <TripHeader @new-trip="onNewTrip" @edit-trip="showEditDialog = true" @export-trip="showExportDialog = true" />
+          <TripStats />
           <DayTabs />
-          <PlaceSearch @place-selected="onPlaceSelected" />
+          <PlaceSearch ref="placeSearchRef" @place-selected="onPlaceSelected" />
           <ScrollArea class="flex-1">
-            <PlaceList @place-clicked="onPlaceClicked" />
+            <Transition name="slide-fade" mode="out-in">
+              <PlaceList :key="store.selectedDayIndex" :highlighted-place-id="highlightedPlaceId" @place-clicked="onPlaceClicked" />
+            </Transition>
           </ScrollArea>
         </template>
 
@@ -93,19 +181,60 @@ function onNewTrip() {
       </div>
 
       <!-- Right panel -->
-      <div class="flex-1 h-full">
-        <WorldMap ref="worldMapRef" />
+      <div
+        class="h-full md:flex md:flex-1"
+        :class="showMap ? 'flex flex-1' : 'hidden'"
+      >
+        <WorldMap ref="worldMapRef" @style-changed="onStyleChanged" />
       </div>
     </div>
+
+    <!-- Keyboard shortcuts help button -->
+    <Button
+      variant="outline"
+      size="icon"
+      class="fixed bottom-6 right-6 z-50 hidden md:flex rounded-full h-9 w-9 shadow-md"
+      aria-label="Keyboard shortcuts"
+      @click="showShortcutsHelp = true"
+    >
+      <KeyboardIcon class="h-4 w-4" />
+    </Button>
+
+    <!-- Mobile map/list toggle -->
+    <Button
+      class="fixed bottom-6 right-6 z-50 md:hidden rounded-full h-14 w-14 shadow-lg"
+      size="icon"
+      @click="showMap = !showMap"
+      :aria-label="showMap ? 'Show list' : 'Show map'"
+    >
+      <ListIcon v-if="showMap" class="h-5 w-5" />
+      <MapIcon v-else class="h-5 w-5" />
+    </Button>
   </div>
 </template>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import '~/assets/css/print.css';
 
 body {
   margin: 0;
   min-height: 100vh;
   font-family: 'Outfit', sans-serif;
+}
+
+.slide-fade-enter-active {
+  transition: all 0.2s ease;
+}
+.slide-fade-leave-active {
+  transition: all 0.15s ease;
+}
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateX(10px);
+}
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-10px);
 }
 </style>

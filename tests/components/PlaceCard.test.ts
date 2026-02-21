@@ -20,11 +20,13 @@ const placeNoCategory: Place = {
   category: '',
 }
 
-function mountCard(props: Partial<{ place: Place; color: string }> = {}) {
+function mountCard(props: Partial<{ place: Place; color: string; dayIndex: number; totalDays: number }> = {}) {
   return mount(PlaceCard, {
     props: {
       place: props.place ?? place,
       color: props.color ?? '#EF4444',
+      dayIndex: props.dayIndex ?? 0,
+      totalDays: props.totalDays ?? 1,
     },
     global: {
       plugins: [createPinia()],
@@ -59,11 +61,13 @@ describe('PlaceCard', () => {
     expect(wrapperNoCat.text()).not.toContain('landmark')
   })
 
-  it('emits click with the place when card is clicked', async () => {
+  it('toggles expanded state when card is clicked', async () => {
     const wrapper = mountCard()
+    // Initially collapsed — expanded detail section hidden via grid-rows-[0fr]
+    expect(wrapper.find('.grid-rows-\\[1fr\\]').exists()).toBe(false)
     await wrapper.find('[role="button"]').trigger('click')
-    expect(wrapper.emitted('click')).toBeTruthy()
-    expect(wrapper.emitted('click')![0]).toEqual([place])
+    // After click, expanded detail section visible via grid-rows-[1fr]
+    expect(wrapper.find('.grid-rows-\\[1fr\\]').exists()).toBe(true)
   })
 
   it('emits remove with placeId when remove button is clicked', async () => {
@@ -74,17 +78,17 @@ describe('PlaceCard', () => {
     expect(wrapper.emitted('remove')![0]).toEqual(['p-1'])
   })
 
-  it('emits click on Enter keydown', async () => {
+  it('toggles expanded state on Enter keydown', async () => {
     const wrapper = mountCard()
+    expect(wrapper.find('.grid-rows-\\[1fr\\]').exists()).toBe(false)
     await wrapper.find('[role="button"]').trigger('keydown.enter')
-    expect(wrapper.emitted('click')).toBeTruthy()
-    expect(wrapper.emitted('click')![0]).toEqual([place])
+    expect(wrapper.find('.grid-rows-\\[1fr\\]').exists()).toBe(true)
   })
 
-  it('emits click on Space keydown', async () => {
+  it('toggles expanded state on Space keydown', async () => {
     const wrapper = mountCard()
+    expect(wrapper.find('.grid-rows-\\[1fr\\]').exists()).toBe(false)
     await wrapper.find('[role="button"]').trigger('keydown.space')
-    expect(wrapper.emitted('click')).toBeTruthy()
-    expect(wrapper.emitted('click')![0]).toEqual([place])
+    expect(wrapper.find('.grid-rows-\\[1fr\\]').exists()).toBe(true)
   })
 })

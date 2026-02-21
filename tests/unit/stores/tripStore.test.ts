@@ -9,6 +9,8 @@ describe('tripStore', () => {
   let store: TripStore
 
   beforeEach(() => {
+    localStorage.removeItem('itinerary-trips')
+    localStorage.removeItem('itinerary-current-trip-id')
     store = createTestStore()
     store.clearTrip()
   })

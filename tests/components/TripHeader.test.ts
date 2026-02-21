@@ -24,7 +24,7 @@ describe('TripHeader', () => {
     const { wrapper } = mountHeader()
     const h2 = wrapper.find('h2')
     expect(h2.exists()).toBe(true)
-    expect(h2.text()).toBe('Summer in Italy')
+    expect(h2.text()).toContain('Summer in Italy')
   })
 
   it('renders the date range', () => {
@@ -35,7 +35,7 @@ describe('TripHeader', () => {
   })
 
   it('shows day count badge', () => {
-    const { wrapper } = mountHeader()
+    const { wrapper, store } = mountHeader()
     // The Badge component is stubbed by shallowMount as <badge-stub>.
     // Shallow stubs in @vue/test-utils v2 do NOT render slot content.
     // Verify the badge stub exists and has the correct variant prop.
@@ -43,7 +43,7 @@ describe('TripHeader', () => {
     expect(badge.exists()).toBe(true)
     expect(badge.attributes('variant')).toBe('secondary')
     // Verify the store has 5 days (the badge text "5 days" comes from the store data)
-    expect(wrapper.vm.$pinia.state.value.trip.trip.days.length).toBe(5)
+    expect(store.trip!.days.length).toBe(5)
   })
 
   it('emits new-trip and edit-trip on button clicks', async () => {
@@ -51,7 +51,7 @@ describe('TripHeader', () => {
 
     const buttons = wrapper.findAllComponents({ name: 'Button' })
     const editBtn = buttons.find(b => b.attributes('aria-label') === 'Edit trip')
-    const newBtn = buttons.find(b => b.attributes('aria-label') === 'Start new trip')
+    const newBtn = buttons.find(b => b.attributes('aria-label') === 'My trips')
 
     expect(editBtn).toBeDefined()
     expect(newBtn).toBeDefined()

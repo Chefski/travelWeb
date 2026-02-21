@@ -21,6 +21,10 @@ export interface Place {
   category: string
   coordinates: [number, number]
   order: number
+  notes: string
+  estimatedTime: string
+  cost: number
+  rating: number
 }
 
 export interface MapboxSuggestion {

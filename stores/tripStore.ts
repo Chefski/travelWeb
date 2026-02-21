@@ -4,11 +4,60 @@ import { useLocalStorage } from '@vueuse/core'
 import type { Trip, TripDay, Place } from '~/types/trip'
 
 export const useTripStore = defineStore('trip', () => {
-  const trip = useLocalStorage<Trip | null>('itinerary-trip', null, {
-    serializer: { read: (v: string) => JSON.parse(v), write: (v: Trip | null) => JSON.stringify(v) },
+  const trips = useLocalStorage<Trip[]>('itinerary-trips', [], {
+    serializer: { read: (v: string) => JSON.parse(v), write: (v: Trip[]) => JSON.stringify(v) },
+  })
+
+  const currentTripId = useLocalStorage<string | null>('itinerary-current-trip-id', null, {
+    serializer: { read: (v: string) => JSON.parse(v), write: (v: string | null) => JSON.stringify(v) },
+  })
+
+  // Migrate old single-trip localStorage format
+  if (typeof window !== 'undefined') {
+    const oldData = localStorage.getItem('itinerary-trip')
+    if (oldData && oldData !== 'null') {
+      try {
+        const oldTrip = JSON.parse(oldData) as Trip
+        if (oldTrip && oldTrip.id) {
+          if (!trips.value.find(t => t.id === oldTrip.id)) {
+            trips.value = [...trips.value, oldTrip]
+          }
+          currentTripId.value = oldTrip.id
+          localStorage.removeItem('itinerary-trip')
+        }
+      } catch {
+        localStorage.removeItem('itinerary-trip')
+      }
+    }
+  }
+
+  // Ensure currentTripId points to a valid trip
+  if (currentTripId.value && !trips.value.find(t => t.id === currentTripId.value)) {
+    currentTripId.value = trips.value.length > 0 ? trips.value[0].id : null
+  }
+  if (!currentTripId.value && trips.value.length > 0) {
+    currentTripId.value = trips.value[0].id
+  }
+
+  // Writable computed: getter finds current trip, setter replaces it in the array.
+  // This preserves ALL existing mutation patterns (trip.value = { ...trip.value }).
+  const trip = computed<Trip | null>({
+    get: () => {
+      if (!currentTripId.value) return null
+      return trips.value.find(t => t.id === currentTripId.value) ?? null
+    },
+    set: (newVal: Trip | null) => {
+      if (!newVal || !currentTripId.value) return
+      const idx = trips.value.findIndex(t => t.id === currentTripId.value)
+      if (idx !== -1) {
+        trips.value[idx] = newVal
+        trips.value = [...trips.value]
+      }
+    },
   })
 
   const selectedDayIndex = ref(0)
+  const lastRemoved = ref<{ dayIndex: number; place: Place; position: number } | null>(null)
 
   const currentDay = computed<TripDay | null>(() => {
     if (!trip.value || !trip.value.days.length) return null
@@ -38,7 +87,7 @@ export const useTripStore = defineStore('trip', () => {
 
   function createTrip(name: string, startDate: string, endDate: string, coverImage?: string) {
     const days = generateDays(startDate, endDate)
-    trip.value = {
+    const newTrip: Trip = {
       id: crypto.randomUUID(),
       name,
       coverImage: coverImage || '',
@@ -46,6 +95,8 @@ export const useTripStore = defineStore('trip', () => {
       endDate,
       days,
     }
+    trips.value = [...trips.value, newTrip]
+    currentTripId.value = newTrip.id
     selectedDayIndex.value = 0
   }
 
@@ -53,23 +104,100 @@ export const useTripStore = defineStore('trip', () => {
     selectedDayIndex.value = index
   }
 
-  function addPlace(place: Omit<Place, 'id' | 'order'>) {
+  function addPlace(place: Omit<Place, 'id' | 'order' | 'notes' | 'estimatedTime' | 'cost' | 'rating'>) {
     if (!trip.value || !currentDay.value) return
     const newPlace: Place = {
       ...place,
       id: crypto.randomUUID(),
       order: currentDay.value.places.length,
+      notes: '',
+      estimatedTime: '',
+      cost: 0,
+      rating: 0,
     }
     currentDay.value.places.push(newPlace)
     trip.value = { ...trip.value }
   }
 
+  function updatePlaceNotes(dayIndex: number, placeId: string, notes: string) {
+    if (!trip.value) return
+    const day = trip.value.days[dayIndex]
+    if (!day) return
+    const place = day.places.find(p => p.id === placeId)
+    if (place) {
+      place.notes = notes
+      trip.value = { ...trip.value }
+    }
+  }
+
+  function updatePlace(dayIndex: number, placeId: string, updates: Partial<Pick<Place, 'notes' | 'estimatedTime' | 'cost' | 'rating'>>) {
+    if (!trip.value) return
+    const day = trip.value.days[dayIndex]
+    if (!day) return
+    const place = day.places.find(p => p.id === placeId)
+    if (place) {
+      Object.assign(place, updates)
+      trip.value = { ...trip.value }
+    }
+  }
+
   function removePlace(dayIndex: number, placeId: string) {
     if (!trip.value) return
     const day = trip.value.days[dayIndex]
+    const placeIndex = day.places.findIndex(p => p.id === placeId)
+    if (placeIndex === -1) return
+    const removedPlace = { ...day.places[placeIndex] }
+    lastRemoved.value = { dayIndex, place: removedPlace, position: placeIndex }
     day.places = day.places.filter(p => p.id !== placeId)
     day.places.forEach((p, i) => (p.order = i))
     trip.value = { ...trip.value }
+  }
+
+  function undoRemove() {
+    if (!trip.value || !lastRemoved.value) return
+    const { dayIndex, place, position } = lastRemoved.value
+    const day = trip.value.days[dayIndex]
+    if (!day) return
+    day.places.splice(position, 0, place)
+    day.places.forEach((p, i) => (p.order = i))
+    trip.value = { ...trip.value }
+    lastRemoved.value = null
+  }
+
+  function movePlace(fromDayIndex: number, placeId: string, toDayIndex: number) {
+    if (!trip.value) return null
+    const fromDay = trip.value.days[fromDayIndex]
+    const toDay = trip.value.days[toDayIndex]
+    if (!fromDay || !toDay) return null
+    const placeIndex = fromDay.places.findIndex(p => p.id === placeId)
+    if (placeIndex === -1) return null
+    const [place] = fromDay.places.splice(placeIndex, 1)
+    place.order = toDay.places.length
+    toDay.places.push(place)
+    fromDay.places.forEach((p, i) => (p.order = i))
+    trip.value = { ...trip.value }
+    return place
+  }
+
+  function duplicatePlace(fromDayIndex: number, placeId: string, toDayIndex: number) {
+    if (!trip.value) return null
+    const fromDay = trip.value.days[fromDayIndex]
+    const toDay = trip.value.days[toDayIndex]
+    if (!fromDay || !toDay) return null
+    const place = fromDay.places.find(p => p.id === placeId)
+    if (!place) return null
+    const newPlace: Place = {
+      ...place,
+      id: crypto.randomUUID(),
+      order: toDay.places.length,
+      notes: '',
+      estimatedTime: '',
+      cost: 0,
+      rating: 0,
+    }
+    toDay.places.push(newPlace)
+    trip.value = { ...trip.value }
+    return newPlace
   }
 
   function reorderPlaces(dayIndex: number, newPlaces: Place[]) {
@@ -106,12 +234,32 @@ export const useTripStore = defineStore('trip', () => {
   }
 
   function clearTrip() {
-    trip.value = null
+    if (currentTripId.value) {
+      trips.value = trips.value.filter(t => t.id !== currentTripId.value)
+    }
+    currentTripId.value = trips.value.length > 0 ? trips.value[0].id : null
     selectedDayIndex.value = 0
+  }
+
+  function switchTrip(tripId: string) {
+    if (trips.value.find(t => t.id === tripId)) {
+      currentTripId.value = tripId
+      selectedDayIndex.value = 0
+    }
+  }
+
+  function deleteTrip(tripId: string) {
+    trips.value = trips.value.filter(t => t.id !== tripId)
+    if (currentTripId.value === tripId) {
+      currentTripId.value = trips.value.length > 0 ? trips.value[0].id : null
+      selectedDayIndex.value = 0
+    }
   }
 
   return {
     trip,
+    trips: computed(() => trips.value),
+    currentTripId,
     selectedDayIndex,
     currentDay,
     allPlaces,
@@ -120,8 +268,15 @@ export const useTripStore = defineStore('trip', () => {
     selectDay,
     addPlace,
     removePlace,
+    movePlace,
+    duplicatePlace,
     reorderPlaces,
+    updatePlace,
+    updatePlaceNotes,
     clearTrip,
+    switchTrip,
+    deleteTrip,
+    undoRemove,
   }
 })
 

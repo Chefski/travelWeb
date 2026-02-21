@@ -47,6 +47,12 @@ const MockMap = vi.fn().mockImplementation(function (this: any) {
   this.getZoom = vi.fn(() => 10)
   this.project = vi.fn((lngLat: [number, number]) => ({ x: lngLat[0], y: lngLat[1] }))
   this.loaded = vi.fn(() => true)
+  this.addSource = vi.fn()
+  this.addLayer = vi.fn()
+  this.getLayer = vi.fn(() => undefined)
+  this.getSource = vi.fn(() => undefined)
+  this.removeLayer = vi.fn()
+  this.removeSource = vi.fn()
 })
 
 vi.mock('mapbox-gl', () => ({
