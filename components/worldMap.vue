@@ -24,7 +24,7 @@ defineExpose({ map });
   <div class="h-full">
     <div 
       id="map-container" 
-      class="w-full h-full rounded-lg overflow-hidden"
+      class="w-full h-full"
     ></div>
   </div>
 </template>

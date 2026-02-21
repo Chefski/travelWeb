@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,6 @@ import { useTripStore } from '~/stores/tripStore'
 import { useImageUpload } from '~/composables/useImageUpload'
 
 const open = defineModel<boolean>('open', { default: false })
-const emit = defineEmits<{ created: [] }>()
 
 const store = useTripStore()
 const { processFile } = useImageUpload()
@@ -33,6 +32,23 @@ const coverImage = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const imagePreview = ref<string | null>(null)
 const isProcessingImage = ref(false)
+
+function parseDate(dateStr: string): CalendarDate {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new CalendarDate(y, m, d)
+}
+
+watch(open, (isOpen) => {
+  if (isOpen && store.trip) {
+    tripName.value = store.trip.name
+    dateRange.value = {
+      start: parseDate(store.trip.startDate),
+      end: parseDate(store.trip.endDate),
+    }
+    coverImage.value = store.trip.coverImage || ''
+    imagePreview.value = store.trip.coverImage || null
+  }
+})
 
 async function onFileSelected(event: Event) {
   const input = event.target as HTMLInputElement
@@ -68,7 +84,7 @@ watch(coverImage, (val) => {
   }
 })
 
-const canCreate = computed(() => {
+const canSave = computed(() => {
   return tripName.value.trim().length > 0 && dateRange.value.start && dateRange.value.end
 })
 
@@ -93,21 +109,16 @@ const dateLabel = computed(() => {
   return 'Pick your travel dates'
 })
 
-function onCreate() {
-  if (!canCreate.value) return
-  store.createTrip(
+function onSave() {
+  if (!canSave.value) return
+  store.updateTrip(
     tripName.value.trim(),
     formatDate(dateRange.value.start),
     formatDate(dateRange.value.end),
     coverImage.value.trim() || undefined,
   )
-  tripName.value = ''
-  dateRange.value = { start: undefined, end: undefined }
-  coverImage.value = ''
-  imagePreview.value = null
-  if (fileInputRef.value) fileInputRef.value.value = ''
   open.value = false
-  emit('created')
+  toast('Trip updated')
 }
 </script>
 
@@ -115,8 +126,8 @@ function onCreate() {
   <Dialog v-model:open="open">
     <DialogContent class="sm:max-w-[480px]">
       <DialogHeader>
-        <DialogTitle>Plan a new trip</DialogTitle>
-        <DialogDescription>Set your trip details to get started.</DialogDescription>
+        <DialogTitle>Edit trip</DialogTitle>
+        <DialogDescription>Update your trip details.</DialogDescription>
       </DialogHeader>
 
       <div class="grid gap-4 py-4">
@@ -179,8 +190,9 @@ function onCreate() {
       </div>
 
       <DialogFooter>
-        <Button :disabled="!canCreate" @click="onCreate">
-          Create Trip
+        <Button variant="outline" @click="open = false">Cancel</Button>
+        <Button :disabled="!canSave" @click="onSave">
+          Save Changes
         </Button>
       </DialogFooter>
     </DialogContent>

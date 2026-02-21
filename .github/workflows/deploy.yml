@@ -29,6 +29,8 @@ jobs:
 
       - name: Generate static site
         run: npx nuxi generate
+        env:
+          VITE_MAPBOX_TOKEN: ${{ secrets.VITE_MAPBOX_TOKEN }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

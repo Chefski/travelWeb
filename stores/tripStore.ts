@@ -78,6 +78,33 @@ export const useTripStore = defineStore('trip', () => {
     trip.value = { ...trip.value }
   }
 
+  function updateTrip(name: string, startDate: string, endDate: string, coverImage?: string) {
+    if (!trip.value) return
+
+    const oldDaysByDate = new Map<string, TripDay>()
+    for (const day of trip.value.days) {
+      oldDaysByDate.set(day.date, day)
+    }
+
+    const newDays = generateDays(startDate, endDate).map((day) => {
+      const existing = oldDaysByDate.get(day.date)
+      return existing ? { ...day, places: existing.places } : day
+    })
+
+    trip.value = {
+      ...trip.value,
+      name,
+      startDate,
+      endDate,
+      coverImage: coverImage ?? trip.value.coverImage,
+      days: newDays,
+    }
+
+    if (selectedDayIndex.value >= newDays.length) {
+      selectedDayIndex.value = Math.max(0, newDays.length - 1)
+    }
+  }
+
   function clearTrip() {
     trip.value = null
     selectedDayIndex.value = 0
@@ -89,6 +116,7 @@ export const useTripStore = defineStore('trip', () => {
     currentDay,
     allPlaces,
     createTrip,
+    updateTrip,
     selectDay,
     addPlace,
     removePlace,
