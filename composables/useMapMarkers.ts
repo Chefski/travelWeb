@@ -28,12 +28,47 @@ type AnyFeature = CFeature | PFeature
 const SPRING = 'cubic-bezier(0.34, 1.56, 0.64, 1)'
 const PULL = 'cubic-bezier(0.36, 0, 0.66, -0.56)'
 
-function isCluster(f: AnyFeature): f is CFeature {
+export function isCluster(f: AnyFeature): f is CFeature {
   return (f.properties as any).cluster === true
 }
 
-function escapeHtml(s: string): string {
+export function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+export function conicGradient(counts: Record<number, number>): string {
+  const entries = Object.entries(counts)
+    .map(([d, c]) => ({ day: Number(d), count: c }))
+    .sort((a, b) => a.day - b.day)
+  const total = entries.reduce((s, e) => s + e.count, 0)
+  if (entries.length <= 1) {
+    return DAY_COLORS[(entries[0]?.day ?? 0) % DAY_COLORS.length] ?? DAY_COLORS[0] ?? '#3B82F6'
+  }
+  let angle = 0
+  const stops: string[] = []
+  for (const { day, count } of entries) {
+    const color = DAY_COLORS[day % DAY_COLORS.length]
+    const end = angle + (count / total) * 360
+    stops.push(`${color} ${angle}deg ${end}deg`)
+    angle = end
+  }
+  return `conic-gradient(${stops.join(', ')})`
+}
+
+export function nearest(
+  lngLat: [number, number],
+  candidates: Array<{ lngLat: [number, number] }>,
+): [number, number] | null {
+  if (!candidates.length) return null
+  let best = candidates[0]!
+  let min = Infinity
+  for (const c of candidates) {
+    const dx = c.lngLat[0] - lngLat[0]
+    const dy = c.lngLat[1] - lngLat[1]
+    const d = dx * dx + dy * dy
+    if (d < min) { min = d; best = c }
+  }
+  return best.lngLat
 }
 
 export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
@@ -122,25 +157,6 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
     anim.appendChild(ui)
     root.appendChild(anim)
     return root
-  }
-
-  function conicGradient(counts: Record<number, number>): string {
-    const entries = Object.entries(counts)
-      .map(([d, c]) => ({ day: Number(d), count: c }))
-      .sort((a, b) => a.day - b.day)
-    const total = entries.reduce((s, e) => s + e.count, 0)
-    if (entries.length <= 1) {
-      return DAY_COLORS[(entries[0]?.day ?? 0) % DAY_COLORS.length] ?? DAY_COLORS[0] ?? '#3B82F6'
-    }
-    let angle = 0
-    const stops: string[] = []
-    for (const { day, count } of entries) {
-      const color = DAY_COLORS[day % DAY_COLORS.length]
-      const end = angle + (count / total) * 360
-      stops.push(`${color} ${angle}deg ${end}deg`)
-      angle = end
-    }
-    return `conic-gradient(${stops.join(', ')})`
   }
 
   function createClusterEl(count: number, dayColorCounts: Record<number, number>): HTMLElement {
@@ -297,24 +313,6 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>) {
       { duration: 300, easing: 'ease-in', fill: 'forwards' },
     )
     a.onfinish = () => marker.remove()
-  }
-
-  // --- Helpers ---
-
-  function nearest(
-    lngLat: [number, number],
-    candidates: Array<{ lngLat: [number, number] }>,
-  ): [number, number] | null {
-    if (!candidates.length) return null
-    let best = candidates[0]!
-    let min = Infinity
-    for (const c of candidates) {
-      const dx = c.lngLat[0] - lngLat[0]
-      const dy = c.lngLat[1] - lngLat[1]
-      const d = dx * dx + dy * dy
-      if (d < min) { min = d; best = c }
-    }
-    return best.lngLat
   }
 
   // --- Core Render (diff-based) ---
