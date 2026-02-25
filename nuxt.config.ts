@@ -15,7 +15,8 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
     'shadcn-nuxt',
     '@pinia/nuxt',
-    '@nuxtjs/color-mode'
+    '@nuxtjs/color-mode',
+    '@nuxt/eslint'
   ],
 
   colorMode: {
@@ -32,4 +33,4 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2026-02-21'
-})
+});

@@ -5,9 +5,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 
-const open = defineModel<boolean>('open', { default: false })
+const open = defineModel<boolean>('open', { default: false });
 
 const shortcuts = [
   { keys: ['←', '→'], description: 'Switch between days' },
@@ -17,7 +17,7 @@ const shortcuts = [
   { keys: ['⌘', 'N'], description: 'New trip' },
   { keys: ['⌘', 'S'], description: 'Export trip' },
   { keys: ['?'], description: 'Show shortcuts' },
-]
+];
 </script>
 
 <template>

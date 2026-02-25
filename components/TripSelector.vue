@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from 'vue';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Trash2Icon, PlusIcon } from 'lucide-vue-next'
-import { useTripStore } from '~/stores/tripStore'
-import type { Trip } from '~/types/trip'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Trash2Icon, PlusIcon } from 'lucide-vue-next';
+import { useTripStore } from '~/stores/tripStore';
+import type { Trip } from '~/types/trip';
 
-const open = defineModel<boolean>('open', { default: false })
-const emit = defineEmits<{ 'create-new': [] }>()
+const open = defineModel<boolean>('open', { default: false });
+const emit = defineEmits<{ 'create-new': [] }>();
 
-const store = useTripStore()
-const confirmDeleteId = ref<string | null>(null)
+const store = useTripStore();
+const confirmDeleteId = ref<string | null>(null);
 
 const GRADIENTS = [
   'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -26,42 +26,42 @@ const GRADIENTS = [
   'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
   'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
   'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
-]
+];
 
 function getGradient(id: string) {
-  let hash = 0
-  for (const ch of id) hash = ((hash << 5) - hash) + ch.charCodeAt(0)
-  return GRADIENTS[Math.abs(hash) % GRADIENTS.length]
+  let hash = 0;
+  for (const ch of id) hash = ((hash << 5) - hash) + ch.charCodeAt(0);
+  return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
 }
 
 function formatDates(start: string, end: string) {
   const fmt = (d: string) =>
-    new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  return `${fmt(start)} – ${fmt(end)}`
+    new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${fmt(start)} – ${fmt(end)}`;
 }
 
 function totalPlaces(t: Trip) {
-  return t.days.reduce((sum, d) => sum + d.places.length, 0)
+  return t.days.reduce((sum, d) => sum + d.places.length, 0);
 }
 
 function selectTrip(tripId: string) {
-  store.switchTrip(tripId)
-  confirmDeleteId.value = null
-  open.value = false
+  store.switchTrip(tripId);
+  confirmDeleteId.value = null;
+  open.value = false;
 }
 
 function onDelete(tripId: string) {
   if (confirmDeleteId.value === tripId) {
-    store.deleteTrip(tripId)
-    confirmDeleteId.value = null
+    store.deleteTrip(tripId);
+    confirmDeleteId.value = null;
   } else {
-    confirmDeleteId.value = tripId
+    confirmDeleteId.value = tripId;
   }
 }
 
 function onCreateNew() {
-  emit('create-new')
-  open.value = false
+  emit('create-new');
+  open.value = false;
 }
 </script>
 
@@ -90,7 +90,7 @@ function onCreateNew() {
               :src="t.coverImage"
               alt=""
               class="w-full h-full object-cover"
-            />
+            >
             <div v-else class="w-full h-full" :style="{ background: getGradient(t.id) }" />
           </div>
 

@@ -1,43 +1,43 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { MapPinIcon, CalendarIcon, BarChart3Icon } from 'lucide-vue-next'
-import { useTripStore } from '~/stores/tripStore'
-import { useWeather } from '~/composables/useWeather'
+import { computed } from 'vue';
+import { MapPinIcon, CalendarIcon, BarChart3Icon } from 'lucide-vue-next';
+import { useTripStore } from '~/stores/tripStore';
+import { useWeather } from '~/composables/useWeather';
 
-const store = useTripStore()
-const { weather } = useWeather()
+const store = useTripStore();
+const { weather } = useWeather();
 
-const totalPlaces = computed(() => store.allPlaces.length)
+const totalPlaces = computed(() => store.allPlaces.length);
 
-const currentDayPlaces = computed(() => store.currentDay?.places.length ?? 0)
+const currentDayPlaces = computed(() => store.currentDay?.places.length ?? 0);
 
 const daysPlanned = computed(() => {
-  if (!store.trip) return { planned: 0, total: 0 }
-  const total = store.trip.days.length
-  const planned = store.trip.days.filter(d => d.places.length > 0).length
-  return { planned, total }
-})
+  if (!store.trip) return { planned: 0, total: 0 };
+  const total = store.trip.days.length;
+  const planned = store.trip.days.filter(d => d.places.length > 0).length;
+  return { planned, total };
+});
 
 const totalCost = computed(() => {
-  return store.allPlaces.reduce((sum, p) => sum + (p.cost || 0), 0)
-})
+  return store.allPlaces.reduce((sum, p) => sum + (p.cost || 0), 0);
+});
 
 const countdown = computed(() => {
-  if (!store.trip) return ''
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const start = new Date(store.trip.startDate + 'T00:00:00')
-  const end = new Date(store.trip.endDate + 'T00:00:00')
+  if (!store.trip) return '';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(store.trip.startDate + 'T00:00:00');
+  const end = new Date(store.trip.endDate + 'T00:00:00');
 
   if (today < start) {
-    const diffDays = Math.ceil((start.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    return `In ${diffDays} day${diffDays === 1 ? '' : 's'}`
+    const diffDays = Math.ceil((start.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return `In ${diffDays} day${diffDays === 1 ? '' : 's'}`;
   }
   if (today <= end) {
-    return 'Happening now!'
+    return 'Happening now!';
   }
-  return 'Trip ended'
-})
+  return 'Trip ended';
+});
 </script>
 
 <template>

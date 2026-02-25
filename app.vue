@@ -1,151 +1,151 @@
 <script setup lang="ts">
-import { ref, watch, computed, watchEffect, onMounted } from 'vue'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Button } from '@/components/ui/button'
-import { Toaster } from '@/components/ui/sonner'
-import { toast } from 'vue-sonner'
-import { MapIcon, ListIcon, SunIcon, MoonIcon, KeyboardIcon, LayoutListIcon, ClockIcon } from 'lucide-vue-next'
-import { useTripStore } from '~/stores/tripStore'
-import { useTripSharing } from '~/composables/useTripSharing'
-import { useMapMarkers } from '~/composables/useMapMarkers'
-import { useKeyboardShortcuts } from '~/composables/useKeyboardShortcuts'
-import type { Place } from '~/types/trip'
-import confetti from 'canvas-confetti'
+import { ref, watch, computed, watchEffect, onMounted } from 'vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Toaster } from '@/components/ui/sonner';
+import { toast } from 'vue-sonner';
+import { MapIcon, ListIcon, SunIcon, MoonIcon, KeyboardIcon, LayoutListIcon, ClockIcon } from 'lucide-vue-next';
+import { useTripStore } from '~/stores/tripStore';
+import { useTripSharing } from '~/composables/useTripSharing';
+import { useMapMarkers } from '~/composables/useMapMarkers';
+import { useKeyboardShortcuts } from '~/composables/useKeyboardShortcuts';
+import type { Place } from '~/types/trip';
 
-const store = useTripStore()
-const colorMode = useColorMode()
+const store = useTripStore();
+const colorMode = useColorMode();
 
 // Check for shared trip in URL
 if (typeof window !== 'undefined') {
-  const { decodeTripFromUrl, clearShareHash } = useTripSharing()
-  const sharedTrip = decodeTripFromUrl()
+  const { decodeTripFromUrl, clearShareHash } = useTripSharing();
+  const sharedTrip = decodeTripFromUrl();
   if (sharedTrip) {
-    store.createTrip(sharedTrip.name, sharedTrip.startDate, sharedTrip.endDate)
+    store.createTrip(sharedTrip.name, sharedTrip.startDate, sharedTrip.endDate);
     if (store.trip) {
-      store.trip = { ...store.trip, days: sharedTrip.days }
+      store.trip = { ...store.trip, days: sharedTrip.days };
     }
-    clearShareHash()
-    toast(`Imported shared trip: "${sharedTrip.name}"`)
+    clearShareHash();
+    toast(`Imported shared trip: "${sharedTrip.name}"`);
   }
 }
 
 function toggleDarkMode() {
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark';
 }
 
-const worldMapRef = ref<InstanceType<typeof WorldMap> | null>(null)
-const mapRef = computed(() => worldMapRef.value?.map ?? null)
-const highlightedPlaceId = ref<string | null>(null)
+const worldMapRef = ref<InstanceType<typeof WorldMap> | null>(null);
+const mapRef = computed(() => worldMapRef.value?.map ?? null);
+const highlightedPlaceId = ref<string | null>(null);
 
 function onMarkerClicked(placeId: string, dayIndex: number) {
   if (store.selectedDayIndex !== dayIndex) {
-    store.selectDay(dayIndex)
+    store.selectDay(dayIndex);
   }
-  highlightedPlaceId.value = placeId
+  highlightedPlaceId.value = placeId;
   setTimeout(() => {
-    highlightedPlaceId.value = null
-  }, 2000)
+    highlightedPlaceId.value = null;
+  }, 2000);
 }
 
-const { syncMarkers, flyToPlace, fitAllPlaces } = useMapMarkers(mapRef, onMarkerClicked, store.getDayColor)
+const { syncMarkers, flyToPlace, fitAllPlaces } = useMapMarkers(mapRef, onMarkerClicked, store.getDayColor);
 
-const showSetupDialog = ref(!store.trip)
-const showEditDialog = ref(false)
-const showExportDialog = ref(false)
-const showShortcutsHelp = ref(false)
-const showTripSelector = ref(false)
-const showMap = ref(false)
-const viewMode = ref<'list' | 'timeline'>('list')
-const placeSearchRef = ref<InstanceType<typeof PlaceSearch> | null>(null)
+const showSetupDialog = ref(!store.trip);
+const showEditDialog = ref(false);
+const showExportDialog = ref(false);
+const showShortcutsHelp = ref(false);
+const showTripSelector = ref(false);
+const showMap = ref(false);
+const viewMode = ref<'list' | 'timeline'>('list');
+const placeSearchRef = ref<InstanceType<typeof PlaceSearch> | null>(null);
 
-const isLoaded = ref(false)
+const isLoaded = ref(false);
 onMounted(() => {
   requestAnimationFrame(() => {
-    isLoaded.value = true
-  })
-})
+    isLoaded.value = true;
+  });
+});
 
 useKeyboardShortcuts({
   onFocusSearch: () => placeSearchRef.value?.focus(),
-  onEditTrip: () => { showEditDialog.value = true },
+  onEditTrip: () => { showEditDialog.value = true; },
   onNewTrip,
-  onToggleExport: () => { showExportDialog.value = true },
+  onToggleExport: () => { showExportDialog.value = true; },
   showShortcutsHelp,
-})
+});
 
 // Sync markers whenever trip data or map readiness changes
 watchEffect(() => {
-  const map = mapRef.value
-  const trip = store.trip
+  const map = mapRef.value;
+  const trip = store.trip;
 
   if (!map || !trip) {
-    syncMarkers([])
-    return
+    syncMarkers([]);
+    return;
   }
 
   const allDayData = trip.days.map((day, idx) => ({
     dayIndex: idx,
     places: day.places,
-  }))
-  syncMarkers(allDayData, store.selectedDayIndex)
-})
+  }));
+  syncMarkers(allDayData, store.selectedDayIndex);
+});
 
 // Fit map to current day's places when switching days
 watch(
   () => store.selectedDayIndex,
   () => {
     if (store.currentDay && store.currentDay.places.length > 0) {
-      fitAllPlaces(store.currentDay.places)
+      fitAllPlaces(store.currentDay.places);
     }
   },
-)
+);
 
 function onPlaceSelected(place: Place) {
-  flyToPlace(place.coordinates)
-  toast(`Added "${place.name}" to Day ${store.selectedDayIndex + 1}`)
+  flyToPlace(place.coordinates);
+  toast(`Added "${place.name}" to Day ${store.selectedDayIndex + 1}`);
 }
 
 function onPlaceClicked(place: Place) {
-  flyToPlace(place.coordinates)
+  flyToPlace(place.coordinates);
 }
 
-function onTripCreated() {
-  showSetupDialog.value = false
-  toast('Trip created! Start adding places.')
+async function onTripCreated() {
+  showSetupDialog.value = false;
+  toast('Trip created! Start adding places.');
+  const { default: confetti } = await import('canvas-confetti');
   confetti({
     particleCount: 100,
     spread: 70,
     origin: { y: 0.6 },
     colors: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b'],
-  })
+  });
 }
 
 function onNewTrip() {
-  showTripSelector.value = true
+  showTripSelector.value = true;
 }
 
 function onCreateNewFromSelector() {
-  showSetupDialog.value = true
+  showSetupDialog.value = true;
 }
 
 function onStyleChanged() {
-  if (!store.trip || !mapRef.value) return
+  if (!store.trip || !mapRef.value) return;
   const allDayData = store.trip.days.map((day, idx) => ({
     dayIndex: idx,
     places: day.places,
-  }))
-  syncMarkers(allDayData, store.selectedDayIndex)
+  }));
+  syncMarkers(allDayData, store.selectedDayIndex);
 }
 </script>
 
 <template>
   <div class="h-screen bg-background font-outfit overflow-hidden transition-all duration-700 ease-out" :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'">
     <Toaster position="top-right" />
-    <TripSetupDialog v-model:open="showSetupDialog" @created="onTripCreated" />
-    <TripEditDialog v-model:open="showEditDialog" />
-    <TripExport v-model:open="showExportDialog" />
-    <KeyboardShortcutsHelp v-model:open="showShortcutsHelp" />
-    <TripSelector v-model:open="showTripSelector" @create-new="onCreateNewFromSelector" />
+    <LazyTripSetupDialog v-model:open="showSetupDialog" @created="onTripCreated" />
+    <LazyTripEditDialog v-model:open="showEditDialog" />
+    <LazyTripExport v-model:open="showExportDialog" />
+    <LazyKeyboardShortcutsHelp v-model:open="showShortcutsHelp" />
+    <LazyTripSelector v-model:open="showTripSelector" @create-new="onCreateNewFromSelector" />
 
     <div class="flex h-full">
       <!-- Left panel -->
@@ -199,7 +199,7 @@ function onStyleChanged() {
         class="h-full md:block md:flex-1"
         :class="showMap ? 'block flex-1' : 'hidden'"
       >
-        <WorldMap ref="worldMapRef" @style-changed="onStyleChanged" />
+        <LazyWorldMap ref="worldMapRef" @style-changed="onStyleChanged" />
       </div>
     </div>
 
@@ -218,8 +218,8 @@ function onStyleChanged() {
     <Button
       class="fixed bottom-6 right-6 z-50 md:hidden rounded-full h-14 w-14 shadow-lg"
       size="icon"
-      @click="showMap = !showMap"
       :aria-label="showMap ? 'Show list' : 'Show map'"
+      @click="showMap = !showMap"
     >
       <ListIcon v-if="showMap" class="h-5 w-5" />
       <MapIcon v-else class="h-5 w-5" />

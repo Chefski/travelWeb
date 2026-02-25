@@ -1,4 +1,4 @@
-import type { Trip } from '~/types/trip'
+import type { Trip } from '~/types/trip';
 
 interface ShareableTrip {
   n: string       // name
@@ -33,13 +33,13 @@ function compress(trip: Trip): string {
         mid: p.mapboxId,
       })),
     })),
-  }
-  return btoa(encodeURIComponent(JSON.stringify(data)))
+  };
+  return btoa(encodeURIComponent(JSON.stringify(data)));
 }
 
 function decompress(encoded: string): Trip | null {
   try {
-    const data: ShareableTrip = JSON.parse(decodeURIComponent(atob(encoded)))
+    const data: ShareableTrip = JSON.parse(decodeURIComponent(atob(encoded)));
     return {
       id: crypto.randomUUID(),
       name: data.n,
@@ -61,31 +61,31 @@ function decompress(encoded: string): Trip | null {
           estimatedTime: '',
         })),
       })),
-    }
+    };
   } catch {
-    return null
+    return null;
   }
 }
 
 export function useTripSharing() {
   function encodeTripToUrl(trip: Trip): string {
-    const encoded = compress(trip)
-    const base = window.location.origin + window.location.pathname
-    return `${base}#share=${encoded}`
+    const encoded = compress(trip);
+    const base = window.location.origin + window.location.pathname;
+    return `${base}#share=${encoded}`;
   }
 
   function decodeTripFromUrl(): Trip | null {
-    const hash = window.location.hash
-    if (!hash.startsWith('#share=')) return null
-    const encoded = hash.slice(7)
-    return decompress(encoded)
+    const hash = window.location.hash;
+    if (!hash.startsWith('#share=')) return null;
+    const encoded = hash.slice(7);
+    return decompress(encoded);
   }
 
   function clearShareHash() {
     if (window.location.hash.startsWith('#share=')) {
-      history.replaceState(null, '', window.location.pathname)
+      history.replaceState(null, '', window.location.pathname);
     }
   }
 
-  return { encodeTripToUrl, decodeTripFromUrl, clearShareHash }
+  return { encodeTripToUrl, decodeTripFromUrl, clearShareHash };
 }

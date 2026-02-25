@@ -65,4 +65,4 @@ export const DAY_COLORS: string[] = [
   '#3B82F6',
   '#6366F1',
   '#8B5CF6',
-]
+];

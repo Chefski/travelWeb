@@ -1,55 +1,55 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
-import { VueDraggable } from 'vue-draggable-plus'
-import { MapPinIcon } from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
-import { useTripStore } from '~/stores/tripStore'
-import { DAY_COLORS } from '~/types/trip'
-import type { Place } from '~/types/trip'
+import { ref, watch, computed } from 'vue';
+import { VueDraggable } from 'vue-draggable-plus';
+import { MapPinIcon } from 'lucide-vue-next';
+import { toast } from 'vue-sonner';
+import { useTripStore } from '~/stores/tripStore';
+import { DAY_COLORS } from '~/types/trip';
+import type { Place } from '~/types/trip';
 
 const props = defineProps<{
   highlightedPlaceId?: string | null
-}>()
+}>();
 
-const emit = defineEmits<{ 'place-clicked': [place: Place] }>()
+const emit = defineEmits<{ 'place-clicked': [place: Place] }>();
 
-const store = useTripStore()
+const store = useTripStore();
 
-const cardRefs: Record<string, HTMLElement> = {}
+const cardRefs: Record<string, HTMLElement> = {};
 
 watch(() => props.highlightedPlaceId, (id) => {
   if (id && cardRefs[id]) {
-    cardRefs[id].scrollIntoView({ behavior: 'smooth', block: 'center' })
+    cardRefs[id].scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
-})
+});
 
-const localPlaces = ref<Place[]>([])
+const localPlaces = ref<Place[]>([]);
 
 watch(
   () => store.currentDay?.places,
   (newPlaces) => {
-    localPlaces.value = [...(newPlaces ?? [])]
+    localPlaces.value = [...(newPlaces ?? [])];
   },
   { immediate: true, deep: true },
-)
+);
 
-const dayColor = computed(() => DAY_COLORS[store.selectedDayIndex % DAY_COLORS.length])
+const dayColor = computed(() => DAY_COLORS[store.selectedDayIndex % DAY_COLORS.length]);
 
 function onDragEnd() {
-  store.reorderPlaces(store.selectedDayIndex, localPlaces.value)
+  store.reorderPlaces(store.selectedDayIndex, localPlaces.value);
 }
 
 function onRemovePlace(placeId: string) {
-  const place = localPlaces.value.find(p => p.id === placeId)
-  const placeName = place?.name ?? 'Place'
-  store.removePlace(store.selectedDayIndex, placeId)
+  const place = localPlaces.value.find(p => p.id === placeId);
+  const placeName = place?.name ?? 'Place';
+  store.removePlace(store.selectedDayIndex, placeId);
   toast(`Removed "${placeName}"`, {
     action: {
       label: 'Undo',
       onClick: () => store.undoRemove(),
     },
     duration: 5000,
-  })
+  });
 }
 </script>
 

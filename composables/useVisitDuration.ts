@@ -46,23 +46,23 @@ const CATEGORY_DURATIONS: Record<string, string> = {
   bakery: '15-30min',
   pharmacy: '15min',
   hospital: '1h',
-}
+};
 
 export function useVisitDuration() {
   function suggestDuration(category: string): string | null {
-    if (!category) return null
-    const lower = category.toLowerCase()
+    if (!category) return null;
+    const lower = category.toLowerCase();
 
     // Direct match
-    if (CATEGORY_DURATIONS[lower]) return CATEGORY_DURATIONS[lower]
+    if (CATEGORY_DURATIONS[lower]) return CATEGORY_DURATIONS[lower];
 
     // Partial match: check if the category contains a known key
     for (const [key, duration] of Object.entries(CATEGORY_DURATIONS)) {
-      if (lower.includes(key) || key.includes(lower)) return duration
+      if (lower.includes(key) || key.includes(lower)) return duration;
     }
 
-    return null
+    return null;
   }
 
-  return { suggestDuration }
+  return { suggestDuration };
 }

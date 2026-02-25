@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ref, nextTick } from 'vue';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   GripVerticalIcon, XIcon, PencilIcon, ArrowRightLeftIcon, ClockIcon, CopyIcon,
   UtensilsIcon, BedDoubleIcon, LandmarkIcon, ShoppingBagIcon, TreesIcon,
   BuildingIcon, MapPinIcon, NavigationIcon, DollarSignIcon, ExternalLinkIcon, StarIcon,
-} from 'lucide-vue-next'
-import { useTripStore } from '~/stores/tripStore'
-import { DAY_COLORS } from '~/types/trip'
-import type { Place } from '~/types/trip'
-import { toast } from 'vue-sonner'
+} from 'lucide-vue-next';
+import { useTripStore } from '~/stores/tripStore';
+import { DAY_COLORS } from '~/types/trip';
+import type { Place } from '~/types/trip';
+import { toast } from 'vue-sonner';
 
 const CATEGORY_ICONS: Record<string, any> = {
   restaurant: UtensilsIcon,
@@ -30,14 +30,14 @@ const CATEGORY_ICONS: Record<string, any> = {
   garden: TreesIcon,
   poi: BuildingIcon,
   address: BuildingIcon,
-}
+};
 
 function getCategoryIcon(category: string) {
-  const lower = category.toLowerCase()
+  const lower = category.toLowerCase();
   for (const [key, icon] of Object.entries(CATEGORY_ICONS)) {
-    if (lower.includes(key)) return icon
+    if (lower.includes(key)) return icon;
   }
-  return MapPinIcon
+  return MapPinIcon;
 }
 
 const props = defineProps<{
@@ -45,96 +45,96 @@ const props = defineProps<{
   color: string
   dayIndex: number
   totalDays: number
-}>()
+}>();
 
 const emit = defineEmits<{
   remove: [placeId: string]
   click: [place: Place]
-}>()
+}>();
 
-const store = useTripStore()
+const store = useTripStore();
 
-const isExpanded = ref(false)
+const isExpanded = ref(false);
 
 function toggleExpand() {
-  isExpanded.value = !isExpanded.value
+  isExpanded.value = !isExpanded.value;
 }
 
-const moveOpen = ref(false)
+const moveOpen = ref(false);
 
 function moveToDay(targetDayIndex: number) {
-  const moved = store.movePlace(props.dayIndex, props.place.id, targetDayIndex)
+  const moved = store.movePlace(props.dayIndex, props.place.id, targetDayIndex);
   if (moved) {
-    toast(`Moved "${moved.name}" to Day ${targetDayIndex + 1}`)
+    toast(`Moved "${moved.name}" to Day ${targetDayIndex + 1}`);
   }
-  moveOpen.value = false
+  moveOpen.value = false;
 }
 
 function copyToDay(targetDayIndex: number) {
-  const copied = store.duplicatePlace(props.dayIndex, props.place.id, targetDayIndex)
+  const copied = store.duplicatePlace(props.dayIndex, props.place.id, targetDayIndex);
   if (copied) {
-    toast(`Copied "${copied.name}" to Day ${targetDayIndex + 1}`)
+    toast(`Copied "${copied.name}" to Day ${targetDayIndex + 1}`);
   }
-  moveOpen.value = false
+  moveOpen.value = false;
 }
 
-const isEditingNotes = ref(false)
-const notesText = ref(props.place.notes ?? '')
-const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const isEditingNotes = ref(false);
+const notesText = ref(props.place.notes ?? '');
+const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
 function startEditing() {
-  notesText.value = props.place.notes ?? ''
-  isEditingNotes.value = true
-  nextTick(() => textareaRef.value?.focus())
+  notesText.value = props.place.notes ?? '';
+  isEditingNotes.value = true;
+  nextTick(() => textareaRef.value?.focus());
 }
 
 function saveNotes() {
-  isEditingNotes.value = false
-  const trimmed = notesText.value.trim()
+  isEditingNotes.value = false;
+  const trimmed = notesText.value.trim();
   if (trimmed !== (props.place.notes ?? '')) {
-    store.updatePlaceNotes(props.dayIndex, props.place.id, trimmed)
+    store.updatePlaceNotes(props.dayIndex, props.place.id, trimmed);
   }
 }
 
-const isEditingTime = ref(false)
-const timeText = ref(props.place.estimatedTime ?? '')
-const timeInputRef = ref<HTMLInputElement | null>(null)
+const isEditingTime = ref(false);
+const timeText = ref(props.place.estimatedTime ?? '');
+const timeInputRef = ref<HTMLInputElement | null>(null);
 
 function startEditingTime() {
-  timeText.value = props.place.estimatedTime ?? ''
-  isEditingTime.value = true
-  nextTick(() => timeInputRef.value?.focus())
+  timeText.value = props.place.estimatedTime ?? '';
+  isEditingTime.value = true;
+  nextTick(() => timeInputRef.value?.focus());
 }
 
 function saveTime() {
-  isEditingTime.value = false
-  const trimmed = timeText.value.trim()
+  isEditingTime.value = false;
+  const trimmed = timeText.value.trim();
   if (trimmed !== (props.place.estimatedTime ?? '')) {
-    store.updatePlace(props.dayIndex, props.place.id, { estimatedTime: trimmed })
+    store.updatePlace(props.dayIndex, props.place.id, { estimatedTime: trimmed });
   }
 }
 
-const isEditingCost = ref(false)
-const costText = ref(String(props.place.cost || ''))
-const costInputRef = ref<HTMLInputElement | null>(null)
+const isEditingCost = ref(false);
+const costText = ref(String(props.place.cost || ''));
+const costInputRef = ref<HTMLInputElement | null>(null);
 
 function startEditingCost() {
-  costText.value = props.place.cost ? String(props.place.cost) : ''
-  isEditingCost.value = true
-  nextTick(() => costInputRef.value?.focus())
+  costText.value = props.place.cost ? String(props.place.cost) : '';
+  isEditingCost.value = true;
+  nextTick(() => costInputRef.value?.focus());
 }
 
 function saveCost() {
-  isEditingCost.value = false
-  const val = parseFloat(costText.value) || 0
+  isEditingCost.value = false;
+  const val = parseFloat(costText.value) || 0;
   if (val !== (props.place.cost || 0)) {
-    store.updatePlace(props.dayIndex, props.place.id, { cost: val })
+    store.updatePlace(props.dayIndex, props.place.id, { cost: val });
   }
 }
 
 function setRating(value: number) {
-  const newRating = value === (props.place.rating || 0) ? 0 : value
-  store.updatePlace(props.dayIndex, props.place.id, { rating: newRating })
+  const newRating = value === (props.place.rating || 0) ? 0 : value;
+  store.updatePlace(props.dayIndex, props.place.id, { rating: newRating });
 }
 </script>
 
@@ -194,7 +194,7 @@ function setRating(value: number) {
           @blur="saveTime"
           @keydown.enter.prevent="saveTime"
           @keydown.escape="isEditingTime = false"
-        />
+        >
         <!-- Cost -->
         <button
           v-if="!isEditingCost && !place.cost"
@@ -223,7 +223,7 @@ function setRating(value: number) {
           @blur="saveCost"
           @keydown.enter.prevent="saveCost"
           @keydown.escape="isEditingCost = false"
-        />
+        >
         <!-- Star rating (collapsed - show only if rated) -->
         <span v-if="place.rating" class="text-xs text-amber-500 inline-flex items-center gap-0.5">
           <StarIcon class="h-3 w-3 fill-current" />
@@ -335,8 +335,8 @@ function setRating(value: number) {
           <div class="flex flex-col gap-1">
             <button
               v-for="i in totalDays"
-              :key="i"
               v-show="i - 1 !== dayIndex"
+              :key="i"
               class="flex items-center gap-2 px-2 py-1 text-sm rounded hover:bg-muted transition-colors text-left"
               @click="moveToDay(i - 1)"
             >
@@ -352,8 +352,8 @@ function setRating(value: number) {
           <div class="flex flex-col gap-1">
             <button
               v-for="i in totalDays"
-              :key="'copy-' + i"
               v-show="i - 1 !== dayIndex"
+              :key="'copy-' + i"
               class="flex items-center gap-2 px-2 py-1 text-sm rounded hover:bg-muted transition-colors text-left"
               @click="copyToDay(i - 1)"
             >

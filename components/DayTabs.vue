@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { useTripStore } from '~/stores/tripStore'
-import { DAY_COLORS } from '~/types/trip'
+import { ref } from 'vue';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useTripStore } from '~/stores/tripStore';
+import { DAY_COLORS } from '~/types/trip';
 
-const store = useTripStore()
-const colorPickerDay = ref<number | null>(null)
+const store = useTripStore();
+const colorPickerDay = ref<number | null>(null);
 
 const COLOR_OPTIONS = [
   ...DAY_COLORS,
@@ -15,46 +15,46 @@ const COLOR_OPTIONS = [
   '#F59E0B', // amber
   '#10B981', // emerald
   '#6B7280', // gray
-]
+];
 
 function formatShortDate(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00')
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const date = new Date(dateStr + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function getColor(index: number): string {
-  return store.getDayColor(index)
+  return store.getDayColor(index);
 }
 
 function pickColor(dayIndex: number, color: string) {
-  store.setDayColor(dayIndex, color)
-  colorPickerDay.value = null
+  store.setDayColor(dayIndex, color);
+  colorPickerDay.value = null;
 }
 
 function parseTime(timeStr: string): number {
-  if (!timeStr) return 0
-  let minutes = 0
-  const hourMatch = timeStr.match(/(\d+)\s*h/i)
-  const minMatch = timeStr.match(/(\d+)\s*m/i)
-  if (hourMatch) minutes += parseInt(hourMatch[1]) * 60
-  if (minMatch) minutes += parseInt(minMatch[1])
-  return minutes
+  if (!timeStr) return 0;
+  let minutes = 0;
+  const hourMatch = timeStr.match(/(\d+)\s*h/i);
+  const minMatch = timeStr.match(/(\d+)\s*m/i);
+  if (hourMatch) minutes += parseInt(hourMatch[1]) * 60;
+  if (minMatch) minutes += parseInt(minMatch[1]);
+  return minutes;
 }
 
 function formatTotalTime(minutes: number): string {
-  if (minutes === 0) return ''
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  if (h && m) return `${h}h ${m}m`
-  if (h) return `${h}h`
-  return `${m}m`
+  if (minutes === 0) return '';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h && m) return `${h}h ${m}m`;
+  if (h) return `${h}h`;
+  return `${m}m`;
 }
 
 function dayTotalTime(index: number): string {
-  if (!store.trip) return ''
-  const places = store.trip.days[index]?.places ?? []
-  const total = places.reduce((sum, p) => sum + parseTime(p.estimatedTime), 0)
-  return formatTotalTime(total)
+  if (!store.trip) return '';
+  const places = store.trip.days[index]?.places ?? [];
+  const total = places.reduce((sum, p) => sum + parseTime(p.estimatedTime), 0);
+  return formatTotalTime(total);
 }
 </script>
 

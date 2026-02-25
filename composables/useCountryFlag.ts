@@ -1,5 +1,5 @@
-import { computed } from 'vue'
-import { useTripStore } from '~/stores/tripStore'
+import { computed } from 'vue';
+import { useTripStore } from '~/stores/tripStore';
 
 const FLAGS: Record<string, string> = {
   japan: '\u{1F1EF}\u{1F1F5}', 'united states': '\u{1F1FA}\u{1F1F8}', usa: '\u{1F1FA}\u{1F1F8}', france: '\u{1F1EB}\u{1F1F7}', italy: '\u{1F1EE}\u{1F1F9}',
@@ -15,34 +15,34 @@ const FLAGS: Record<string, string> = {
   'united arab emirates': '\u{1F1E6}\u{1F1EA}', uae: '\u{1F1E6}\u{1F1EA}', dubai: '\u{1F1E6}\u{1F1EA}', israel: '\u{1F1EE}\u{1F1F1}',
   russia: '\u{1F1F7}\u{1F1FA}', belgium: '\u{1F1E7}\u{1F1EA}', romania: '\u{1F1F7}\u{1F1F4}', taiwan: '\u{1F1F9}\u{1F1FC}', cuba: '\u{1F1E8}\u{1F1FA}',
   'costa rica': '\u{1F1E8}\u{1F1F7}', panama: '\u{1F1F5}\u{1F1E6}', jamaica: '\u{1F1EF}\u{1F1F2}', scotland: '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}',
-}
+};
 
 export function useCountryFlag() {
-  const store = useTripStore()
+  const store = useTripStore();
 
   const flag = computed(() => {
-    if (!store.allPlaces.length) return '\u{1F30D}'
+    if (!store.allPlaces.length) return '\u{1F30D}';
 
-    const countryCounts: Record<string, number> = {}
+    const countryCounts: Record<string, number> = {};
     for (const place of store.allPlaces) {
-      const parts = place.address.split(',')
-      if (parts.length < 2) continue
-      const country = parts[parts.length - 1].trim().toLowerCase()
-      countryCounts[country] = (countryCounts[country] || 0) + 1
+      const parts = place.address.split(',');
+      if (parts.length < 2) continue;
+      const country = parts[parts.length - 1].trim().toLowerCase();
+      countryCounts[country] = (countryCounts[country] || 0) + 1;
     }
 
-    let topCountry = ''
-    let topCount = 0
+    let topCountry = '';
+    let topCount = 0;
     for (const [country, count] of Object.entries(countryCounts)) {
       if (count > topCount) {
-        topCount = count
-        topCountry = country
+        topCount = count;
+        topCountry = country;
       }
     }
 
-    if (!topCountry) return '\u{1F30D}'
-    return FLAGS[topCountry] || '\u{1F30D}'
-  })
+    if (!topCountry) return '\u{1F30D}';
+    return FLAGS[topCountry] || '\u{1F30D}';
+  });
 
-  return { flag }
+  return { flag };
 }

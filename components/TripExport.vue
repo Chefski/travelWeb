@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from 'vue';
 import {
   Dialog,
   DialogContent,
@@ -7,129 +7,129 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { CopyIcon, DownloadIcon, UploadIcon, LinkIcon, PrinterIcon } from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
-import { useTripStore } from '~/stores/tripStore'
-import { useTripSharing } from '~/composables/useTripSharing'
-import type { Trip } from '~/types/trip'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { CopyIcon, DownloadIcon, UploadIcon, LinkIcon, PrinterIcon } from 'lucide-vue-next';
+import { toast } from 'vue-sonner';
+import { useTripStore } from '~/stores/tripStore';
+import { useTripSharing } from '~/composables/useTripSharing';
+import type { Trip } from '~/types/trip';
 
-const open = defineModel<boolean>('open', { default: false })
-const store = useTripStore()
-const { encodeTripToUrl } = useTripSharing()
-const fileInput = ref<HTMLInputElement | null>(null)
+const open = defineModel<boolean>('open', { default: false });
+const store = useTripStore();
+const { encodeTripToUrl } = useTripSharing();
+const fileInput = ref<HTMLInputElement | null>(null);
 
 function formatDate(d: string) {
-  const date = new Date(d + 'T00:00:00')
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const date = new Date(d + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function generateText(): string {
-  const trip = store.trip
-  if (!trip) return ''
+  const trip = store.trip;
+  if (!trip) return '';
 
   const fmtFull = (d: string) => {
-    const date = new Date(d + 'T00:00:00')
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  }
+    const date = new Date(d + 'T00:00:00');
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
-  const lines: string[] = []
-  lines.push(`🗺️ ${trip.name}`)
-  lines.push(`📅 ${fmtFull(trip.startDate)} - ${fmtFull(trip.endDate)}`)
-  lines.push('')
+  const lines: string[] = [];
+  lines.push(`🗺️ ${trip.name}`);
+  lines.push(`📅 ${fmtFull(trip.startDate)} - ${fmtFull(trip.endDate)}`);
+  lines.push('');
 
   for (const day of trip.days) {
-    lines.push(`Day ${day.dayNumber} - ${formatDate(day.date)}`)
+    lines.push(`Day ${day.dayNumber} - ${formatDate(day.date)}`);
     if (day.places.length === 0) {
-      lines.push('  (no places planned)')
+      lines.push('  (no places planned)');
     } else {
       for (let i = 0; i < day.places.length; i++) {
-        const place = day.places[i]
-        lines.push(`  ${i + 1}. ${place.name} - ${place.address}`)
+        const place = day.places[i];
+        lines.push(`  ${i + 1}. ${place.name} - ${place.address}`);
         if (place.notes) {
-          lines.push(`     📝 ${place.notes}`)
+          lines.push(`     📝 ${place.notes}`);
         }
       }
     }
-    lines.push('')
+    lines.push('');
   }
 
-  return lines.join('\n').trimEnd()
+  return lines.join('\n').trimEnd();
 }
 
 async function copyShareLink() {
-  if (!store.trip) return
-  const url = encodeTripToUrl(store.trip)
+  if (!store.trip) return;
+  const url = encodeTripToUrl(store.trip);
   try {
-    await navigator.clipboard.writeText(url)
-    toast('Share link copied to clipboard!')
-    open.value = false
+    await navigator.clipboard.writeText(url);
+    toast('Share link copied to clipboard!');
+    open.value = false;
   } catch {
-    toast.error('Failed to copy share link')
+    toast.error('Failed to copy share link');
   }
 }
 
 async function copyAsText() {
-  const text = generateText()
+  const text = generateText();
   try {
-    await navigator.clipboard.writeText(text)
-    toast('Copied itinerary to clipboard!')
-    open.value = false
+    await navigator.clipboard.writeText(text);
+    toast('Copied itinerary to clipboard!');
+    open.value = false;
   } catch {
-    toast.error('Failed to copy to clipboard')
+    toast.error('Failed to copy to clipboard');
   }
 }
 
 function downloadAsJson() {
-  const trip = store.trip
-  if (!trip) return
+  const trip = store.trip;
+  if (!trip) return;
 
-  const json = JSON.stringify(trip, null, 2)
-  const blob = new Blob([json], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${trip.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}.json`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-  toast('Trip downloaded!')
-  open.value = false
+  const json = JSON.stringify(trip, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${trip.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Trip downloaded!');
+  open.value = false;
 }
 
 function printItinerary() {
-  window.print()
-  open.value = false
+  window.print();
+  open.value = false;
 }
 
 function triggerImport() {
-  fileInput.value?.click()
+  fileInput.value?.click();
 }
 
 function onFileSelected(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
 
-  const reader = new FileReader()
+  const reader = new FileReader();
   reader.onload = () => {
     try {
-      const data = JSON.parse(reader.result as string) as Trip
+      const data = JSON.parse(reader.result as string) as Trip;
       if (!data.id || !data.name || !Array.isArray(data.days)) {
-        toast.error('Invalid trip file format')
-        return
+        toast.error('Invalid trip file format');
+        return;
       }
-      store.trip = data
-      toast('Trip imported successfully!')
-      open.value = false
+      store.trip = data;
+      toast('Trip imported successfully!');
+      open.value = false;
     } catch {
-      toast.error('Failed to parse trip file')
+      toast.error('Failed to parse trip file');
     }
-  }
-  reader.readAsText(file)
-  input.value = ''
+  };
+  reader.readAsText(file);
+  input.value = '';
 }
 </script>
 
@@ -188,7 +188,7 @@ function onFileSelected(event: Event) {
           accept=".json"
           class="hidden"
           @change="onFileSelected"
-        />
+        >
       </div>
 
       <DialogFooter>

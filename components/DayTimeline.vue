@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from 'vue';
 import {
   UtensilsIcon, BedDoubleIcon, LandmarkIcon, ShoppingBagIcon, TreesIcon,
-  BuildingIcon, MapPinIcon, ClockIcon, StickyNoteIcon, DollarSignIcon, StarIcon,
-} from 'lucide-vue-next'
-import { useTripStore } from '~/stores/tripStore'
-import { DAY_COLORS } from '~/types/trip'
-import type { Place } from '~/types/trip'
+  BuildingIcon, MapPinIcon, ClockIcon, DollarSignIcon, StarIcon,
+} from 'lucide-vue-next';
+import { useTripStore } from '~/stores/tripStore';
+import { DAY_COLORS } from '~/types/trip';
+import type { Place } from '~/types/trip';
 
 const CATEGORY_ICONS: Record<string, any> = {
   restaurant: UtensilsIcon,
@@ -25,20 +25,20 @@ const CATEGORY_ICONS: Record<string, any> = {
   garden: TreesIcon,
   poi: BuildingIcon,
   address: BuildingIcon,
-}
+};
 
 function getCategoryIcon(category: string) {
-  const lower = category.toLowerCase()
+  const lower = category.toLowerCase();
   for (const [key, icon] of Object.entries(CATEGORY_ICONS)) {
-    if (lower.includes(key)) return icon
+    if (lower.includes(key)) return icon;
   }
-  return MapPinIcon
+  return MapPinIcon;
 }
 
-const emit = defineEmits<{ 'place-clicked': [place: Place] }>()
-const store = useTripStore()
-const dayColor = computed(() => DAY_COLORS[store.selectedDayIndex % DAY_COLORS.length])
-const places = computed(() => store.currentDay?.places ?? [])
+const emit = defineEmits<{ 'place-clicked': [place: Place] }>();
+const store = useTripStore();
+const dayColor = computed(() => DAY_COLORS[store.selectedDayIndex % DAY_COLORS.length]);
+const places = computed(() => store.currentDay?.places ?? []);
 </script>
 
 <template>
