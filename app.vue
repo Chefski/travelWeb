@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'vue-sonner'
 import { MapIcon } from 'lucide-vue-next'
+import { SpeedInsights } from '@vercel/speed-insights/vue'
 import { useTripStore } from '~/stores/tripStore'
 import { useMapMarkers } from '~/composables/useMapMarkers'
 import type { Place } from '~/types/trip'
@@ -67,6 +68,7 @@ function onNewTrip() {
 
 <template>
   <div class="h-screen bg-white font-outfit overflow-hidden">
+    <SpeedInsights />
     <Toaster position="top-right" />
     <TripSetupDialog v-model:open="showSetupDialog" @created="onTripCreated" />
     <TripEditDialog v-model:open="showEditDialog" />
