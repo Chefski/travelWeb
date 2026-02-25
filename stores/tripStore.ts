@@ -34,10 +34,10 @@ export const useTripStore = defineStore('trip', () => {
 
   // Ensure currentTripId points to a valid trip
   if (currentTripId.value && !trips.value.find(t => t.id === currentTripId.value)) {
-    currentTripId.value = trips.value.length > 0 ? trips.value[0].id : null;
+    currentTripId.value = trips.value[0]?.id ?? null;
   }
   if (!currentTripId.value && trips.value.length > 0) {
-    currentTripId.value = trips.value[0].id;
+    currentTripId.value = trips.value[0]?.id ?? null;
   }
 
   // Writable computed: getter finds current trip, setter replaces it in the array.
@@ -76,8 +76,9 @@ export const useTripStore = defineStore('trip', () => {
     const end = new Date(endDate + 'T00:00:00');
     let dayNumber = 1;
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const iso = d.toISOString();
       days.push({
-        date: d.toISOString().split('T')[0],
+        date: iso.split('T')[0] ?? iso,
         dayNumber,
         places: [],
       });
@@ -145,9 +146,12 @@ export const useTripStore = defineStore('trip', () => {
   function removePlace(dayIndex: number, placeId: string) {
     if (!trip.value) return;
     const day = trip.value.days[dayIndex];
+    if (!day) return;
     const placeIndex = day.places.findIndex(p => p.id === placeId);
     if (placeIndex === -1) return;
-    const removedPlace = { ...day.places[placeIndex] };
+    const placeToRemove = day.places[placeIndex];
+    if (!placeToRemove) return;
+    const removedPlace = { ...placeToRemove };
     lastRemoved.value = { dayIndex, place: removedPlace, position: placeIndex };
     day.places = day.places.filter(p => p.id !== placeId);
     day.places.forEach((p, i) => (p.order = i));
@@ -173,6 +177,7 @@ export const useTripStore = defineStore('trip', () => {
     const placeIndex = fromDay.places.findIndex(p => p.id === placeId);
     if (placeIndex === -1) return null;
     const [place] = fromDay.places.splice(placeIndex, 1);
+    if (!place) return null;
     place.order = toDay.places.length;
     toDay.places.push(place);
     fromDay.places.forEach((p, i) => (p.order = i));
@@ -203,7 +208,9 @@ export const useTripStore = defineStore('trip', () => {
 
   function reorderPlaces(dayIndex: number, newPlaces: Place[]) {
     if (!trip.value) return;
-    trip.value.days[dayIndex].places = newPlaces.map((p, i) => ({ ...p, order: i }));
+    const day = trip.value.days[dayIndex];
+    if (!day) return;
+    day.places = newPlaces.map((p, i) => ({ ...p, order: i }));
     trip.value = { ...trip.value };
   }
 
@@ -235,7 +242,7 @@ export const useTripStore = defineStore('trip', () => {
   }
 
   function getDayColor(index: number): string {
-    return trip.value?.customColors?.[index] ?? DAY_COLORS[index % DAY_COLORS.length];
+    return trip.value?.customColors?.[index] ?? DAY_COLORS[index % DAY_COLORS.length] ?? DAY_COLORS[0] ?? '#3B82F6';
   }
 
   function setDayColor(dayIndex: number, color: string) {
@@ -248,7 +255,7 @@ export const useTripStore = defineStore('trip', () => {
     if (currentTripId.value) {
       trips.value = trips.value.filter(t => t.id !== currentTripId.value);
     }
-    currentTripId.value = trips.value.length > 0 ? trips.value[0].id : null;
+    currentTripId.value = trips.value[0]?.id ?? null;
     selectedDayIndex.value = 0;
   }
 
@@ -262,7 +269,7 @@ export const useTripStore = defineStore('trip', () => {
   function deleteTrip(tripId: string) {
     trips.value = trips.value.filter(t => t.id !== tripId);
     if (currentTripId.value === tripId) {
-      currentTripId.value = trips.value.length > 0 ? trips.value[0].id : null;
+      currentTripId.value = trips.value[0]?.id ?? null;
       selectedDayIndex.value = 0;
     }
   }

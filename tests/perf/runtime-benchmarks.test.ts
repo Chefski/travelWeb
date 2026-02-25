@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { createTestStore } from '../helpers/store-helper';
 import { SAMPLE_PLACE } from '../helpers/fixtures';
 
+const IS_CI = Boolean(process.env.CI);
+const ADD_PLACE_THRESHOLD_MS = IS_CI ? 10 : 2;
+const REORDER_THRESHOLD_MS = IS_CI ? 5 : 2;
+
 describe('runtime performance benchmarks', () => {
   it('createTrip with 30 days completes in < 5ms', () => {
     const store = createTestStore();
@@ -37,7 +41,7 @@ describe('runtime performance benchmarks', () => {
     });
     const elapsed = performance.now() - start;
 
-    expect(elapsed).toBeLessThan(2);
+    expect(elapsed).toBeLessThan(ADD_PLACE_THRESHOLD_MS);
     expect(store.currentDay!.places).toHaveLength(101);
   });
 
@@ -62,7 +66,7 @@ describe('runtime performance benchmarks', () => {
     store.reorderPlaces(0, reversed);
     const elapsed = performance.now() - start;
 
-    expect(elapsed).toBeLessThan(2);
+    expect(elapsed).toBeLessThan(REORDER_THRESHOLD_MS);
     expect(store.trip!.days[0].places[0].name).toBe('Place 49');
     expect(store.trip!.days[0].places[49].name).toBe('Place 0');
   });

@@ -27,7 +27,9 @@ export function useCountryFlag() {
     for (const place of store.allPlaces) {
       const parts = place.address.split(',');
       if (parts.length < 2) continue;
-      const country = parts[parts.length - 1].trim().toLowerCase();
+      const rawCountry = parts.at(-1);
+      if (!rawCountry) continue;
+      const country = rawCountry.trim().toLowerCase();
       countryCounts[country] = (countryCounts[country] || 0) + 1;
     }
 

@@ -17,9 +17,20 @@ export function useWeather() {
       return;
     }
 
-    const address = store.allPlaces[0].address;
+    const firstPlace = store.allPlaces[0];
+    if (!firstPlace) {
+      weather.value = null;
+      return;
+    }
+
+    const address = firstPlace.address;
     const parts = address.split(',');
-    const city = parts.length > 1 ? parts[parts.length - 1].trim() : parts[0].trim();
+    const cityPart = (parts.length > 1 ? parts.at(-1) : parts[0])?.trim();
+    if (!cityPart) {
+      weather.value = null;
+      return;
+    }
+    const city = cityPart;
 
     try {
       const response = await fetch(
@@ -32,7 +43,12 @@ export function useWeather() {
       const match = text.match(/([+-]?\d+)°C\s+(.+)/);
       if (match) {
         const temp = match[1];
-        const cond = match[2].trim().toLowerCase();
+        const conditionText = match[2];
+        if (!temp || !conditionText) {
+          weather.value = null;
+          return;
+        }
+        const cond = conditionText.trim().toLowerCase();
         let icon = '☀️';
         if (cond.includes('rain') || cond.includes('drizzle') || cond.includes('shower')) icon = '🌧️';
         else if (cond.includes('cloud') || cond.includes('overcast')) icon = '☁️';
@@ -40,7 +56,7 @@ export function useWeather() {
         else if (cond.includes('fog') || cond.includes('mist') || cond.includes('haze')) icon = '🌫️';
         else if (cond.includes('thunder') || cond.includes('storm')) icon = '⛈️';
         else if (cond.includes('partly')) icon = '⛅';
-        weather.value = { temp: `${temp}°C`, condition: match[2].trim(), icon };
+        weather.value = { temp: `${temp}°C`, condition: conditionText.trim(), icon };
       }
     } catch {
       weather.value = null;

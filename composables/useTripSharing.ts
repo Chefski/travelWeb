@@ -59,6 +59,8 @@ function decompress(encoded: string): Trip | null {
           order: i,
           notes: '',
           estimatedTime: '',
+          cost: 0,
+          rating: 0,
         })),
       })),
     };

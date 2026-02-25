@@ -76,7 +76,8 @@ export function nearest(
 }
 
 export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: (placeId: string, dayIndex: number) => void, getDayColor?: (index: number) => string) {
-  const resolveColor = (dayIndex: number) => getDayColor ? getDayColor(dayIndex) : DAY_COLORS[dayIndex % DAY_COLORS.length];
+  const resolveColor = (dayIndex: number): string =>
+    getDayColor?.(dayIndex) ?? DAY_COLORS[dayIndex % DAY_COLORS.length] ?? DAY_COLORS[0] ?? '#3B82F6';
   let index: Supercluster<PointProps, ClusterProps> | null = null;
   const rendered = new Map<string, RenderedEntry>();
   let rafId = 0;
