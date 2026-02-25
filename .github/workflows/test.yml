@@ -10,7 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
+        with:
+          bun-version: latest
+      - run: bun install
       - run: bun run test:coverage
 
   lint:
@@ -18,7 +20,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
+        with:
+          bun-version: latest
+      - run: bun install
       - run: bun run lint
 
   typecheck:
@@ -26,7 +30,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
+        with:
+          bun-version: latest
+      - run: bun install
       - run: bun run --bun nuxi typecheck
 
   bundle-size:
@@ -34,7 +40,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
+        with:
+          bun-version: latest
+      - run: bun install
       - name: Check bundle size
         run: bun run test:bundle-size
         env:
