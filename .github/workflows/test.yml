@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      - run: bunx nuxi typecheck
+      - run: bun run --bun nuxi typecheck
 
   bundle-size:
     runs-on: ubuntu-latest
