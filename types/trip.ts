@@ -5,6 +5,7 @@ export interface Trip {
   startDate: string
   endDate: string
   days: TripDay[]
+  customColors?: Record<number, string>
 }
 
 export interface TripDay {
@@ -21,6 +22,10 @@ export interface Place {
   category: string
   coordinates: [number, number]
   order: number
+  notes: string
+  estimatedTime: string
+  cost: number
+  rating: number
 }
 
 export interface MapboxSuggestion {
@@ -60,4 +65,4 @@ export const DAY_COLORS: string[] = [
   '#3B82F6',
   '#6366F1',
   '#8B5CF6',
-]
+];

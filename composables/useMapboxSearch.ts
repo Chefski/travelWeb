@@ -1,45 +1,45 @@
-import { ref } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
-import type { MapboxSuggestion, MapboxRetrieveResult } from '~/types/trip'
+import { ref } from 'vue';
+import { useDebounceFn } from '@vueuse/core';
+import type { MapboxSuggestion, MapboxRetrieveResult } from '~/types/trip';
 
 export function useMapboxSearch() {
-  const query = ref('')
-  const suggestions = ref<MapboxSuggestion[]>([])
-  const isLoading = ref(false)
-  const sessionToken = ref(crypto.randomUUID())
+  const query = ref('');
+  const suggestions = ref<MapboxSuggestion[]>([]);
+  const isLoading = ref(false);
+  const sessionToken = ref(crypto.randomUUID());
 
-  const token = import.meta.env.VITE_MAPBOX_TOKEN
-  if (!token) console.warn('[useMapboxSearch] VITE_MAPBOX_TOKEN is not set. Mapbox search will not work.')
+  const token = import.meta.env.VITE_MAPBOX_TOKEN;
+  if (!token) console.warn('[useMapboxSearch] VITE_MAPBOX_TOKEN is not set. Mapbox search will not work.');
 
   async function fetchSuggestions(q: string) {
     if (!q || q.length < 2) {
-      suggestions.value = []
-      return
+      suggestions.value = [];
+      return;
     }
-    isLoading.value = true
+    isLoading.value = true;
     try {
       const params = new URLSearchParams({
         q,
         access_token: token,
         session_token: sessionToken.value,
         limit: '5',
-      })
-      const res = await fetch(`https://api.mapbox.com/search/searchbox/v1/suggest?${params}`)
-      const data = await res.json()
-      suggestions.value = data.suggestions ?? []
+      });
+      const res = await fetch(`https://api.mapbox.com/search/searchbox/v1/suggest?${params}`);
+      const data = await res.json();
+      suggestions.value = data.suggestions ?? [];
     } catch (e) {
-      console.error('Mapbox suggest error:', e)
-      suggestions.value = []
+      console.error('Mapbox suggest error:', e);
+      suggestions.value = [];
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
 
-  const debouncedSearch = useDebounceFn(fetchSuggestions, 300)
+  const debouncedSearch = useDebounceFn(fetchSuggestions, 300);
 
   function onSearchInput(value: string) {
-    query.value = value
-    debouncedSearch(value)
+    query.value = value;
+    debouncedSearch(value);
   }
 
   async function retrievePlace(mapboxId: string): Promise<MapboxRetrieveResult | null> {
@@ -47,20 +47,20 @@ export function useMapboxSearch() {
       const params = new URLSearchParams({
         access_token: token,
         session_token: sessionToken.value,
-      })
-      const res = await fetch(`https://api.mapbox.com/search/searchbox/v1/retrieve/${mapboxId}?${params}`)
-      const data: MapboxRetrieveResult = await res.json()
-      sessionToken.value = crypto.randomUUID()
-      return data
+      });
+      const res = await fetch(`https://api.mapbox.com/search/searchbox/v1/retrieve/${mapboxId}?${params}`);
+      const data: MapboxRetrieveResult = await res.json();
+      sessionToken.value = crypto.randomUUID();
+      return data;
     } catch (e) {
-      console.error('Mapbox retrieve error:', e)
-      return null
+      console.error('Mapbox retrieve error:', e);
+      return null;
     }
   }
 
   function clearSearch() {
-    query.value = ''
-    suggestions.value = []
+    query.value = '';
+    suggestions.value = [];
   }
 
   return {
@@ -70,5 +70,5 @@ export function useMapboxSearch() {
     onSearchInput,
     retrievePlace,
     clearSearch,
-  }
+  };
 }

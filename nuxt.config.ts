@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  ssr: true,
+  ssr: false,
 
   nitro: {
     preset: 'github-pages'
@@ -9,11 +9,19 @@ export default defineNuxtConfig({
     baseURL: '/travelWeb/'
   },
 
+  pages: true,
+
   modules: [
     '@nuxtjs/tailwindcss',
     'shadcn-nuxt',
-    '@pinia/nuxt'
+    '@pinia/nuxt',
+    '@nuxtjs/color-mode',
+    '@nuxt/eslint'
   ],
+
+  colorMode: {
+    classSuffix: '',
+  },
 
   shadcn: {
     prefix: '',
@@ -25,4 +33,4 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2026-02-21'
-})
+});

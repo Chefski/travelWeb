@@ -1,0 +1,116 @@
+@media print {
+  /* Hide non-printable elements */
+  .mapboxgl-map,
+  .mapboxgl-ctrl-group,
+  [aria-label="Map"],
+  [aria-label="Keyboard shortcuts"],
+  [aria-label="Toggle dark mode"],
+  [aria-label="Show map"],
+  [aria-label="Show list"],
+  button[aria-label="Export trip"],
+  button[aria-label="Edit trip"],
+  button[aria-label="My trips"],
+  button[aria-label="Remove place"],
+  button[aria-label="Move to another day"],
+  .cursor-grab,
+  [role="dialog"],
+  [data-sonner-toaster],
+  .fixed {
+    display: none !important;
+  }
+
+  /* Full width layout */
+  body {
+    margin: 0;
+    padding: 0;
+    font-size: 12pt;
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  .h-screen {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Left panel takes full width */
+  .md\:w-\[45\%\],
+  .xl\:w-\[40\%\] {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  /* Hide right panel (map) entirely */
+  .md\:flex-1,
+  .md\:flex.md\:flex-1 {
+    display: none !important;
+  }
+
+  /* Trip header - clean print style */
+  .rounded-xl.overflow-hidden {
+    display: none !important;
+  }
+
+  h2 {
+    font-size: 18pt !important;
+    margin-bottom: 4pt !important;
+  }
+
+  /* Day tabs - print as headers */
+  [role="tablist"] {
+    display: none !important;
+  }
+
+  /* Place cards - clean print style */
+  .rounded-lg.border {
+    border: none !important;
+    border-bottom: 1px solid #ddd !important;
+    border-radius: 0 !important;
+    padding: 8pt 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  /* Hide interactive elements on cards */
+  .opacity-0,
+  .group-hover\:opacity-100 {
+    display: none !important;
+  }
+
+  /* Show text clearly */
+  .truncate {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+  }
+
+  /* Scroll area - no scroll in print */
+  [data-radix-scroll-area-viewport] {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* Page setup */
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+
+  /* Ensure text colors are black */
+  * {
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Keep badge colors */
+  .bg-primary,
+  .rounded-full[style] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
