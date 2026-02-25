@@ -1,8 +1,21 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useTripStore } from '~/stores/tripStore'
 import { DAY_COLORS } from '~/types/trip'
 
 const store = useTripStore()
+const colorPickerDay = ref<number | null>(null)
+
+const COLOR_OPTIONS = [
+  ...DAY_COLORS,
+  '#EC4899', // pink
+  '#14B8A6', // teal
+  '#A855F7', // purple
+  '#F59E0B', // amber
+  '#10B981', // emerald
+  '#6B7280', // gray
+]
 
 function formatShortDate(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00')
@@ -10,7 +23,12 @@ function formatShortDate(dateStr: string): string {
 }
 
 function getColor(index: number): string {
-  return DAY_COLORS[index % DAY_COLORS.length]
+  return store.getDayColor(index)
+}
+
+function pickColor(dayIndex: number, color: string) {
+  store.setDayColor(dayIndex, color)
+  colorPickerDay.value = null
 }
 
 function parseTime(timeStr: string): number {
@@ -47,7 +65,7 @@ function dayTotalTime(index: number): string {
       :key="day.date"
       role="tab"
       :aria-selected="index === store.selectedDayIndex"
-      class="flex flex-col items-center px-3 py-2 rounded-lg min-w-[80px] transition-all text-sm shrink-0 snap-center relative"
+      class="group/tab flex flex-col items-center px-3 py-2 rounded-lg min-w-[80px] transition-all text-sm shrink-0 snap-center relative"
       :class="index === store.selectedDayIndex
         ? 'text-white shadow-md scale-105'
         : 'bg-muted text-muted-foreground hover:bg-muted/80'"
@@ -78,6 +96,28 @@ function dayTotalTime(index: number): string {
         class="absolute -top-1 -right-1 h-3 w-3 rounded-full border-2"
         :class="index === store.selectedDayIndex ? 'border-white/60' : 'border-muted-foreground/30'"
       />
+      <!-- Color picker dot -->
+      <Popover>
+        <PopoverTrigger as-child>
+          <span
+            class="absolute -bottom-1 left-1/2 -translate-x-1/2 h-2.5 w-2.5 rounded-full border border-white shadow-sm cursor-pointer opacity-0 group-hover/tab:opacity-100 transition-opacity"
+            :style="{ backgroundColor: getColor(index) }"
+            @click.stop
+          />
+        </PopoverTrigger>
+        <PopoverContent class="w-auto p-2" :side-offset="8">
+          <div class="grid grid-cols-4 gap-1.5">
+            <button
+              v-for="color in COLOR_OPTIONS"
+              :key="color"
+              class="h-6 w-6 rounded-full border-2 transition-transform hover:scale-110"
+              :class="getColor(index) === color ? 'border-gray-900 scale-110' : 'border-transparent'"
+              :style="{ backgroundColor: color }"
+              @click="pickColor(index, color)"
+            />
+          </div>
+        </PopoverContent>
+      </Popover>
     </button>
   </div>
 </template>

@@ -3,7 +3,8 @@ import { computed } from 'vue'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
-import { FolderOpenIcon, PencilIcon, ShareIcon } from 'lucide-vue-next'
+import { FolderOpenIcon, PencilIcon, ShareIcon, ShuffleIcon } from 'lucide-vue-next'
+import { useLocalStorage } from '@vueuse/core'
 import { useTripStore } from '~/stores/tripStore'
 import { useCountryFlag } from '~/composables/useCountryFlag'
 
@@ -27,14 +28,26 @@ const hasImage = computed(() => {
   return img && img.trim().length > 0
 })
 
+const gradientOverrides = useLocalStorage<Record<string, number>>('trip-gradient-overrides', {})
+
 const fallbackGradient = computed(() => {
   if (!store.trip) return GRADIENTS[0]
+  const override = gradientOverrides.value[store.trip.id]
+  if (override !== undefined) return GRADIENTS[override % GRADIENTS.length]
   let hash = 0
   for (const ch of store.trip.id) {
     hash = ((hash << 5) - hash) + ch.charCodeAt(0)
   }
   return GRADIENTS[Math.abs(hash) % GRADIENTS.length]
 })
+
+function cycleGradient(e: Event) {
+  e.stopPropagation()
+  if (!store.trip) return
+  const currentIdx = GRADIENTS.indexOf(fallbackGradient.value)
+  const nextIdx = (currentIdx + 1) % GRADIENTS.length
+  gradientOverrides.value = { ...gradientOverrides.value, [store.trip.id]: nextIdx }
+}
 
 const progressPercent = computed(() => {
   if (!store.trip) return 0
@@ -81,6 +94,14 @@ const dateDisplay = computed(() => {
           <PencilIcon class="h-4 w-4 text-gray-800" />
         </div>
       </div>
+      <button
+        v-if="!hasImage"
+        class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white"
+        aria-label="Shuffle gradient"
+        @click="cycleGradient"
+      >
+        <ShuffleIcon class="h-3.5 w-3.5 text-gray-800" />
+      </button>
     </div>
     <div class="mt-3">
       <div class="flex items-center justify-between">

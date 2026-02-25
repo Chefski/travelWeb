@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import {
   GripVerticalIcon, XIcon, PencilIcon, ArrowRightLeftIcon, ClockIcon, CopyIcon,
   UtensilsIcon, BedDoubleIcon, LandmarkIcon, ShoppingBagIcon, TreesIcon,
-  BuildingIcon, MapPinIcon, NavigationIcon, DollarSignIcon, ExternalLinkIcon,
+  BuildingIcon, MapPinIcon, NavigationIcon, DollarSignIcon, ExternalLinkIcon, StarIcon,
 } from 'lucide-vue-next'
 import { useTripStore } from '~/stores/tripStore'
 import { DAY_COLORS } from '~/types/trip'
@@ -131,6 +131,11 @@ function saveCost() {
     store.updatePlace(props.dayIndex, props.place.id, { cost: val })
   }
 }
+
+function setRating(value: number) {
+  const newRating = value === (props.place.rating || 0) ? 0 : value
+  store.updatePlace(props.dayIndex, props.place.id, { rating: newRating })
+}
 </script>
 
 <template>
@@ -219,6 +224,11 @@ function saveCost() {
           @keydown.enter.prevent="saveCost"
           @keydown.escape="isEditingCost = false"
         />
+        <!-- Star rating (collapsed - show only if rated) -->
+        <span v-if="place.rating" class="text-xs text-amber-500 inline-flex items-center gap-0.5">
+          <StarIcon class="h-3 w-3 fill-current" />
+          {{ place.rating }}
+        </span>
       </div>
 
       <!-- Notes display -->
@@ -287,6 +297,21 @@ function saveCost() {
                 <ExternalLinkIcon class="h-3 w-3" />
                 Directions
               </a>
+            </div>
+            <!-- Star rating -->
+            <div class="flex items-center gap-1" @click.stop>
+              <span class="text-xs text-muted-foreground mr-1">Rating:</span>
+              <button
+                v-for="star in 5"
+                :key="star"
+                class="p-0 h-5 w-5 flex items-center justify-center transition-colors"
+                @click="setRating(star)"
+              >
+                <StarIcon
+                  class="h-4 w-4 transition-colors"
+                  :class="star <= (place.rating || 0) ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/30 hover:text-amber-300'"
+                />
+              </button>
             </div>
           </div>
         </div>

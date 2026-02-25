@@ -39,18 +39,19 @@ export function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
-export function conicGradient(counts: Record<number, number>): string {
+export function conicGradient(counts: Record<number, number>, colorFn?: (index: number) => string): string {
+  const getColor = colorFn ?? ((i: number) => DAY_COLORS[i % DAY_COLORS.length])
   const entries = Object.entries(counts)
     .map(([d, c]) => ({ day: Number(d), count: c }))
     .sort((a, b) => a.day - b.day)
   const total = entries.reduce((s, e) => s + e.count, 0)
   if (entries.length <= 1) {
-    return DAY_COLORS[(entries[0]?.day ?? 0) % DAY_COLORS.length] ?? DAY_COLORS[0] ?? '#3B82F6'
+    return getColor(entries[0]?.day ?? 0) ?? '#3B82F6'
   }
   let angle = 0
   const stops: string[] = []
   for (const { day, count } of entries) {
-    const color = DAY_COLORS[day % DAY_COLORS.length]
+    const color = getColor(day)
     const end = angle + (count / total) * 360
     stops.push(`${color} ${angle}deg ${end}deg`)
     angle = end
@@ -74,7 +75,8 @@ export function nearest(
   return best.lngLat
 }
 
-export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: (placeId: string, dayIndex: number) => void) {
+export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: (placeId: string, dayIndex: number) => void, getDayColor?: (index: number) => string) {
+  const resolveColor = (dayIndex: number) => getDayColor ? getDayColor(dayIndex) : DAY_COLORS[dayIndex % DAY_COLORS.length]
   let index: Supercluster<PointProps, ClusterProps> | null = null
   const rendered = new Map<string, RenderedEntry>()
   let rafId = 0
@@ -137,7 +139,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: 
     const root = document.createElement('div')
     const anim = document.createElement('div')
     const ui = document.createElement('div')
-    const color = DAY_COLORS[dayIndex % DAY_COLORS.length]
+    const color = resolveColor(dayIndex)
     Object.assign(anim.style, {
       willChange: 'transform, opacity',
       opacity: isSelected ? '1' : '0.35',
@@ -179,7 +181,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: 
       width: '44px',
       height: '44px',
       borderRadius: '50%',
-      background: conicGradient(dayColorCounts),
+      background: conicGradient(dayColorCounts, resolveColor),
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -252,7 +254,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: 
     const popup = new mapboxgl.Popup({ offset: 25, closeButton: false, maxWidth: '250px' }).setHTML(
       `<div style="font-family:'Outfit',sans-serif;padding:6px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-          <span style="background:${DAY_COLORS[props.dayIndex % DAY_COLORS.length]};color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${props.order + 1}</span>
+          <span style="background:${resolveColor(props.dayIndex)};color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${props.order + 1}</span>
           <strong style="font-size:13px">${escapeHtml(props.name)}</strong>
         </div>
         <p style="margin:0;font-size:11px;color:#666">${escapeHtml(props.address)}</p>
@@ -439,7 +441,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: 
         source: sourceId,
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': DAY_COLORS[dayIndex % DAY_COLORS.length],
+          'line-color': resolveColor(dayIndex),
           'line-width': selectedDayIndex !== undefined && dayIndex === selectedDayIndex ? 4 : 2,
           'line-dasharray': selectedDayIndex !== undefined && dayIndex === selectedDayIndex ? [1, 0] : [2, 2],
           'line-opacity': selectedDayIndex !== undefined ? (dayIndex === selectedDayIndex ? 0.9 : 0.25) : 0.7,

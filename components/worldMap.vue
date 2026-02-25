@@ -50,7 +50,7 @@ defineExpose({ map });
 </script>
 
 <template>
-  <div class="relative h-full">
+  <div class="relative w-full h-full">
     <div id="map-container" class="w-full h-full" />
 
     <div

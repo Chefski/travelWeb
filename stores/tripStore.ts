@@ -2,6 +2,7 @@ import { defineStore, acceptHMRUpdate } from 'pinia'
 import { computed, ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import type { Trip, TripDay, Place } from '~/types/trip'
+import { DAY_COLORS } from '~/types/trip'
 
 export const useTripStore = defineStore('trip', () => {
   const trips = useLocalStorage<Trip[]>('itinerary-trips', [], {
@@ -233,6 +234,16 @@ export const useTripStore = defineStore('trip', () => {
     }
   }
 
+  function getDayColor(index: number): string {
+    return trip.value?.customColors?.[index] ?? DAY_COLORS[index % DAY_COLORS.length]
+  }
+
+  function setDayColor(dayIndex: number, color: string) {
+    if (!trip.value) return
+    const customColors = { ...trip.value.customColors, [dayIndex]: color }
+    trip.value = { ...trip.value, customColors }
+  }
+
   function clearTrip() {
     if (currentTripId.value) {
       trips.value = trips.value.filter(t => t.id !== currentTripId.value)
@@ -277,6 +288,8 @@ export const useTripStore = defineStore('trip', () => {
     switchTrip,
     deleteTrip,
     undoRemove,
+    getDayColor,
+    setDayColor,
   }
 })
 

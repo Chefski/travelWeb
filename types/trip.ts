@@ -5,6 +5,7 @@ export interface Trip {
   startDate: string
   endDate: string
   days: TripDay[]
+  customColors?: Record<number, string>
 }
 
 export interface TripDay {

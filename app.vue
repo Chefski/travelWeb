@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'vue-sonner'
-import { MapIcon, ListIcon, SunIcon, MoonIcon, KeyboardIcon } from 'lucide-vue-next'
+import { MapIcon, ListIcon, SunIcon, MoonIcon, KeyboardIcon, LayoutListIcon, ClockIcon } from 'lucide-vue-next'
 import { useTripStore } from '~/stores/tripStore'
 import { useTripSharing } from '~/composables/useTripSharing'
 import { useMapMarkers } from '~/composables/useMapMarkers'
@@ -47,7 +47,7 @@ function onMarkerClicked(placeId: string, dayIndex: number) {
   }, 2000)
 }
 
-const { syncMarkers, flyToPlace, fitAllPlaces } = useMapMarkers(mapRef, onMarkerClicked)
+const { syncMarkers, flyToPlace, fitAllPlaces } = useMapMarkers(mapRef, onMarkerClicked, store.getDayColor)
 
 const showSetupDialog = ref(!store.trip)
 const showEditDialog = ref(false)
@@ -55,6 +55,7 @@ const showExportDialog = ref(false)
 const showShortcutsHelp = ref(false)
 const showTripSelector = ref(false)
 const showMap = ref(false)
+const viewMode = ref<'list' | 'timeline'>('list')
 const placeSearchRef = ref<InstanceType<typeof PlaceSearch> | null>(null)
 
 const isLoaded = ref(false)
@@ -163,10 +164,23 @@ function onStyleChanged() {
           <TripHeader @new-trip="onNewTrip" @edit-trip="showEditDialog = true" @export-trip="showExportDialog = true" />
           <TripStats />
           <DayTabs />
-          <PlaceSearch ref="placeSearchRef" @place-selected="onPlaceSelected" />
+          <div class="flex items-center justify-between">
+            <PlaceSearch ref="placeSearchRef" class="flex-1" @place-selected="onPlaceSelected" />
+            <Button
+              variant="ghost"
+              size="icon"
+              class="h-8 w-8 shrink-0 ml-1"
+              :aria-label="viewMode === 'list' ? 'Switch to timeline view' : 'Switch to list view'"
+              @click="viewMode = viewMode === 'list' ? 'timeline' : 'list'"
+            >
+              <LayoutListIcon v-if="viewMode === 'list'" class="h-4 w-4" />
+              <ClockIcon v-else class="h-4 w-4" />
+            </Button>
+          </div>
           <ScrollArea class="flex-1">
             <Transition name="slide-fade" mode="out-in">
-              <PlaceList :key="store.selectedDayIndex" :highlighted-place-id="highlightedPlaceId" @place-clicked="onPlaceClicked" />
+              <PlaceList v-if="viewMode === 'list'" :key="'list-' + store.selectedDayIndex" :highlighted-place-id="highlightedPlaceId" @place-clicked="onPlaceClicked" />
+              <DayTimeline v-else :key="'timeline-' + store.selectedDayIndex" @place-clicked="onPlaceClicked" />
             </Transition>
           </ScrollArea>
         </template>
@@ -182,8 +196,8 @@ function onStyleChanged() {
 
       <!-- Right panel -->
       <div
-        class="h-full md:flex md:flex-1"
-        :class="showMap ? 'flex flex-1' : 'hidden'"
+        class="h-full md:block md:flex-1"
+        :class="showMap ? 'block flex-1' : 'hidden'"
       >
         <WorldMap ref="worldMapRef" @style-changed="onStyleChanged" />
       </div>
