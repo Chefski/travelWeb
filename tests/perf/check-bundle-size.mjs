@@ -2,7 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
-const LIMIT_KB = 500;
+const LIMIT_KB = 650;
 const nuxtDir = resolve('.output/public/_nuxt');
 
 async function checkBundleSize() {

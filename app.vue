@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'vue-sonner';
 import { MapIcon, ListIcon, SunIcon, MoonIcon, KeyboardIcon, LayoutListIcon, ClockIcon } from 'lucide-vue-next';
+import { SpeedInsights } from '@vercel/speed-insights/vue';
 import { useTripStore } from '~/stores/tripStore';
 import { useTripSharing } from '~/composables/useTripSharing';
 import { useMapMarkers } from '~/composables/useMapMarkers';
@@ -140,6 +141,7 @@ function onStyleChanged() {
 
 <template>
   <div class="h-screen bg-background font-outfit overflow-hidden transition-all duration-700 ease-out" :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'">
+    <SpeedInsights />
     <Toaster position="top-right" />
     <LazyTripSetupDialog v-model:open="showSetupDialog" @created="onTripCreated" />
     <LazyTripEditDialog v-model:open="showEditDialog" />
