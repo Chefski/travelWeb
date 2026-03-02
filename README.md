@@ -1,75 +1,51 @@
-# Nuxt Minimal Starter
+# TravelWeb
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+A client-side travel itinerary planner built with Nuxt 3, Mapbox, and Tailwind CSS. Plan multi-day trips by searching for places and organizing them on an interactive map — all data stays in your browser.
+
+**Live:** [travel-web-sepia.vercel.app](https://travel-web-sepia.vercel.app/)
+
+## Features
+
+- Interactive Mapbox map with clustered markers and route lines between places
+- Day-by-day itinerary planning with drag-and-drop reordering
+- Place search powered by Mapbox Searchbox API
+- Trip sharing via encoded URL (no server required)
+- Export/import trips as JSON, formatted text, or print
+- Weather widget, country flag detection, keyboard shortcuts
+- Dark mode support
+- Fully offline — all data stored in localStorage
+
+## Tech Stack
+
+Nuxt 3 (SPA) / Vue 3 / TypeScript / Tailwind CSS / Pinia / Mapbox GL / shadcn-vue
 
 ## Setup
 
-Make sure to install dependencies:
-
 ```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
 bun install
 ```
 
-## Development Server
+Create a `.env` file with your Mapbox token:
 
-Start the development server on `http://localhost:3000`:
+```
+VITE_MAPBOX_TOKEN=your_mapbox_token
+```
+
+## Development
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
 bun run dev
 ```
 
-## Production
-
-Build the application for production:
+## Testing
 
 ```bash
-# npm
-npm run build
+bun run test        # unit & component tests (Vitest)
+bun run test:e2e    # end-to-end tests (Playwright)
+```
 
-# pnpm
-pnpm build
+## Build
 
-# yarn
-yarn build
-
-# bun
+```bash
 bun run build
 ```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.

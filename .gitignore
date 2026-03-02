@@ -19,6 +19,9 @@ logs
 .idea
 .claude/
 
+# Playwright
+test-results/
+
 # Local env files
 .env
 .env.*

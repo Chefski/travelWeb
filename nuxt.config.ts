@@ -1,12 +1,8 @@
 export default defineNuxtConfig({
   ssr: false,
 
-  nitro: {
-    preset: 'github-pages'
-  },
-
   app: {
-    baseURL: '/travelWeb/',
+    baseURL: '/',
     head: {
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
