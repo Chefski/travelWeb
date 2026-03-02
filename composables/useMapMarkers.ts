@@ -1,8 +1,30 @@
 import type { Ref } from 'vue';
-import mapboxgl from 'mapbox-gl';
-import Supercluster from 'supercluster';
+import type mapboxgl from 'mapbox-gl';
+import type Supercluster from 'supercluster';
 import type { Place } from '~/types/trip';
 import { DAY_COLORS } from '~/types/trip';
+
+type MapboxGL = typeof import('mapbox-gl');
+type SuperclusterConstructor = typeof Supercluster;
+
+let _mb: MapboxGL | null = null;
+let _Supercluster: SuperclusterConstructor | null = null;
+let _depsLoading: Promise<void> | null = null;
+
+function mb() { return _mb!.default; }
+
+async function loadDeps() {
+  if (_mb && _Supercluster) return;
+  if (_depsLoading) return _depsLoading;
+  _depsLoading = Promise.all([
+    import('mapbox-gl'),
+    import('supercluster'),
+  ]).then(([mbMod, sc]) => {
+    _mb = mbMod as unknown as MapboxGL;
+    _Supercluster = (sc as any).default ?? sc;
+  });
+  return _depsLoading;
+}
 
 interface PointProps {
   placeId: string
@@ -89,14 +111,16 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: 
 
   // --- Supercluster ---
 
-  function ensureIndex() {
+  async function ensureIndex() {
     if (index) return;
-    index = new Supercluster<PointProps, ClusterProps>({
+    await loadDeps();
+    const SC = _Supercluster!;
+    index = new SC<PointProps, ClusterProps>({
       radius: 60,
       maxZoom: 16,
       minPoints: 2,
-      map: (props) => ({ dayColorCounts: { [props.dayIndex]: 1 } }),
-      reduce: (acc, props) => {
+      map: (props: PointProps) => ({ dayColorCounts: { [props.dayIndex]: 1 } }),
+      reduce: (acc: ClusterProps, props: ClusterProps) => {
         for (const key of Object.keys(props.dayColorCounts)) {
           const day = Number(key);
           const inc = props.dayColorCounts[day] ?? 0;
@@ -218,7 +242,6 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: 
       { duration: 2000, iterations: Infinity },
     );
 
-    // Hover scale
     // Hover scale on the UI element only (not the root marker element).
     el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.15)'; });
     el.addEventListener('mouseleave', () => { el.style.transform = ''; });
@@ -241,7 +264,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: 
         mapRef.value.flyTo({ center: coords, zoom, duration: 500 });
       });
 
-      return new mapboxgl.Marker({ element: el }).setLngLat(coords);
+      return new (mb().Marker)({ element: el }).setLngLat(coords);
     }
 
     const props = feature.properties;
@@ -252,7 +275,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: 
       onMarkerClick?.(props.placeId, props.dayIndex);
     });
 
-    const popup = new mapboxgl.Popup({ offset: 25, closeButton: false, maxWidth: '250px' }).setHTML(
+    const popup = new (mb().Popup)({ offset: 25, closeButton: false, maxWidth: '250px' }).setHTML(
       `<div style="font-family:'Outfit',sans-serif;padding:6px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <span style="background:${resolveColor(props.dayIndex)};color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${props.order + 1}</span>
@@ -264,7 +287,7 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: 
         ${props.notes ? `<p style="margin:4px 0 0;font-size:11px;color:#888;font-style:italic">${escapeHtml(props.notes)}</p>` : ''}
       </div>`,
     );
-    return new mapboxgl.Marker({ element: el }).setLngLat(coords).setPopup(popup);
+    return new (mb().Marker)({ element: el }).setLngLat(coords).setPopup(popup);
   }
 
   function fid(f: AnyFeature): string {
@@ -455,8 +478,8 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: 
 
   // --- Public API ---
 
-  function syncMarkers(days: Array<{ dayIndex: number; places: Place[] }>, selectedDayIndex?: number) {
-    ensureIndex();
+  async function syncMarkers(days: Array<{ dayIndex: number; places: Place[] }>, selectedDayIndex?: number) {
+    await ensureIndex();
     const map = mapRef.value;
 
     // Build GeoJSON features from trip data
@@ -509,13 +532,14 @@ export function useMapMarkers(mapRef: Ref<mapboxgl.Map | null>, onMarkerClick?: 
     mapRef.value?.flyTo({ center: coordinates, zoom: 14, duration: 1500 });
   }
 
-  function fitAllPlaces(places: Place[]) {
+  async function fitAllPlaces(places: Place[]) {
     if (!mapRef.value || !places.length) return;
     if (places.length === 1) {
       flyToPlace(places[0]!.coordinates);
       return;
     }
-    const bounds = new mapboxgl.LngLatBounds();
+    await loadDeps();
+    const bounds = new (mb().LngLatBounds)();
     places.forEach(p => bounds.extend(p.coordinates));
     mapRef.value.fitBounds(bounds, { padding: 60, duration: 1500 });
   }

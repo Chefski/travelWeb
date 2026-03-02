@@ -63,7 +63,7 @@ export function useWeather() {
     }
   }
 
-  watch(() => store.allPlaces.length, fetchWeather, { immediate: true });
+  watch(() => store.allPlaces.length, fetchWeather);
 
   return { weather };
 }

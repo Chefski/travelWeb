@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
-import { VueDraggable } from 'vue-draggable-plus';
+import { ref, watch, computed, defineAsyncComponent } from 'vue';
+
+const VueDraggable = defineAsyncComponent(() =>
+  import('vue-draggable-plus').then(m => m.VueDraggable),
+);
 import { MapPinIcon } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
 import { useTripStore } from '~/stores/tripStore';

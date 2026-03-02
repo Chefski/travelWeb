@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { ref, watch, computed, watchEffect, onMounted } from 'vue';
+import { ref, watch, computed, watchEffect, defineAsyncComponent } from 'vue';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'vue-sonner';
 import { MapIcon, ListIcon, SunIcon, MoonIcon, KeyboardIcon, LayoutListIcon, ClockIcon } from 'lucide-vue-next';
-import { SpeedInsights } from '@vercel/speed-insights/vue';
 import { useTripStore } from '~/stores/tripStore';
 import { useTripSharing } from '~/composables/useTripSharing';
 import { useMapMarkers } from '~/composables/useMapMarkers';
 import { useKeyboardShortcuts } from '~/composables/useKeyboardShortcuts';
 import type { Place } from '~/types/trip';
+
+const SpeedInsights = defineAsyncComponent(() =>
+  import('@vercel/speed-insights/vue').then(m => m.SpeedInsights),
+);
 
 const store = useTripStore();
 const colorMode = useColorMode();
@@ -57,13 +60,6 @@ const showTripSelector = ref(false);
 const showMap = ref(false);
 const viewMode = ref<'list' | 'timeline'>('list');
 const placeSearchRef = ref<InstanceType<typeof PlaceSearch> | null>(null);
-
-const isLoaded = ref(false);
-onMounted(() => {
-  requestAnimationFrame(() => {
-    isLoaded.value = true;
-  });
-});
 
 useKeyboardShortcuts({
   onFocusSearch: () => placeSearchRef.value?.focus(),
@@ -140,7 +136,7 @@ function onStyleChanged() {
 </script>
 
 <template>
-  <div class="h-screen bg-background font-outfit overflow-hidden transition-all duration-700 ease-out" :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'">
+  <div class="h-screen bg-background font-outfit overflow-hidden">
     <SpeedInsights />
     <Toaster position="top-right" />
     <LazyTripSetupDialog v-model:open="showSetupDialog" @created="onTripCreated" />
@@ -230,7 +226,6 @@ function onStyleChanged() {
 </template>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 @import '~/assets/css/print.css';
 
 body {

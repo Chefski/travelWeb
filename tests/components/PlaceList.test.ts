@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { shallowMount } from '@vue/test-utils';
+import { shallowMount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { useTripStore } from '~/stores/tripStore';
 import { SAMPLE_PLACE, SAMPLE_PLACE_2 } from '../helpers/fixtures';
@@ -14,7 +14,7 @@ vi.mock('vue-draggable-plus', () => ({
   },
 }));
 
-function mountList(withPlaces = false) {
+async function mountList(withPlaces = false) {
   const pinia = createPinia();
   setActivePinia(pinia);
   const store = useTripStore();
@@ -34,6 +34,7 @@ function mountList(withPlaces = false) {
       },
     },
   });
+  await flushPromises();
   return { wrapper, store };
 }
 
@@ -42,19 +43,19 @@ describe('PlaceList', () => {
     setActivePinia(createPinia());
   });
 
-  it('shows empty state when no places exist', () => {
-    const { wrapper } = mountList(false);
+  it('shows empty state when no places exist', async () => {
+    const { wrapper } = await mountList(false);
     expect(wrapper.text()).toContain('No places added yet');
   });
 
-  it('renders a PlaceCard for each place', () => {
-    const { wrapper } = mountList(true);
+  it('renders a PlaceCard for each place', async () => {
+    const { wrapper } = await mountList(true);
     const cards = wrapper.findAllComponents({ name: 'PlaceCard' });
     expect(cards).toHaveLength(2);
   });
 
   it('emits place-clicked when PlaceCard emits click', async () => {
-    const { wrapper, store } = mountList(true);
+    const { wrapper, store } = await mountList(true);
     const card = wrapper.findComponent({ name: 'PlaceCard' });
     const addedPlace = store.currentDay!.places[0];
     card.vm.$emit('click', addedPlace);
@@ -65,7 +66,7 @@ describe('PlaceList', () => {
   });
 
   it('calls store.reorderPlaces when drag ends', async () => {
-    const { wrapper, store } = mountList(true);
+    const { wrapper, store } = await mountList(true);
     const reorderSpy = vi.spyOn(store, 'reorderPlaces');
 
     const vm = wrapper.vm as any;
@@ -78,7 +79,7 @@ describe('PlaceList', () => {
   });
 
   it('calls store.removePlace when PlaceCard emits remove', async () => {
-    const { wrapper, store } = mountList(true);
+    const { wrapper, store } = await mountList(true);
     const placeId = store.currentDay!.places[0].id;
     const removeSpy = vi.spyOn(store, 'removePlace');
 

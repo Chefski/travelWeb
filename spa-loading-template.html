@@ -1,0 +1,37 @@
+<div class="spa-loader">
+  <div class="spa-loader-spinner"></div>
+</div>
+<style>
+.spa-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #fafafa;
+}
+@media (prefers-color-scheme: dark) {
+  .spa-loader { background: #0a0a0a; }
+  .spa-loader-spinner {
+    border-top-color: #e5e5e5 !important;
+    border-left-color: #e5e5e5 !important;
+    border-bottom-color: #333 !important;
+    border-right-color: #333 !important;
+  }
+}
+.spa-loader-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid transparent;
+  border-top-color: #171717;
+  border-left-color: #171717;
+  border-bottom-color: #e5e5e5;
+  border-right-color: #e5e5e5;
+  border-radius: 50%;
+  animation: spa-spin 500ms linear infinite;
+}
+@keyframes spa-spin {
+  to { transform: rotate(360deg); }
+}
+</style>

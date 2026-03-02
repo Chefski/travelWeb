@@ -61,7 +61,7 @@ describe('useMapMarkers composable', () => {
       const mapRef = makeMockMapRef();
       const { syncMarkers } = useMapMarkers(mapRef as any);
 
-      syncMarkers([]);
+      await syncMarkers([]);
 
       // No Marker constructor calls (beyond mock setup)
       expect(MockMarker).not.toHaveBeenCalled();
@@ -73,7 +73,7 @@ describe('useMapMarkers composable', () => {
       const { syncMarkers } = useMapMarkers(mapRef as any);
       const place = makePlace();
 
-      syncMarkers(makeDays([place]));
+      await syncMarkers(makeDays([place]));
 
       // Marker constructor should be called for the point
       expect(MockMarker).toHaveBeenCalled();
@@ -103,7 +103,7 @@ describe('useMapMarkers composable', () => {
         makePlace({ id: `p-${i}`, order: i, coordinates: [2.2945, 48.8584] }),
       );
 
-      syncMarkers(makeDays(places));
+      await syncMarkers(makeDays(places));
 
       // At least one marker should be created (either cluster or points depending on zoom)
       expect(MockMarker).toHaveBeenCalled();
@@ -115,13 +115,13 @@ describe('useMapMarkers composable', () => {
       const { syncMarkers } = useMapMarkers(mapRef as any);
 
       const place1 = makePlace({ id: 'p-1', coordinates: [2.29, 48.85] });
-      syncMarkers(makeDays([place1]));
+      await syncMarkers(makeDays([place1]));
 
       const firstMarker = MockMarker.mock.results[0].value;
 
       // Second sync with different data
       const place2 = makePlace({ id: 'p-2', coordinates: [12.49, 41.89] });
-      syncMarkers(makeDays([place2]));
+      await syncMarkers(makeDays([place2]));
 
       // First marker should have been removed
       expect(firstMarker.remove).toHaveBeenCalled();
@@ -133,7 +133,7 @@ describe('useMapMarkers composable', () => {
       const { syncMarkers } = useMapMarkers(mapRef as any);
 
       const place = makePlace();
-      syncMarkers(makeDays([place]));
+      await syncMarkers(makeDays([place]));
 
       // No markers created since map is null
       expect(MockMarker).not.toHaveBeenCalled();
@@ -147,7 +147,7 @@ describe('useMapMarkers composable', () => {
 
       const { syncMarkers } = useMapMarkers(mapRef as any);
       const place = makePlace();
-      syncMarkers(makeDays([place]));
+      await syncMarkers(makeDays([place]));
 
       // map.once should be called with 'load'
       expect(map.once).toHaveBeenCalledWith('load', expect.any(Function));
@@ -174,7 +174,7 @@ describe('useMapMarkers composable', () => {
       const mapRef = ref(map);
       const { syncMarkers } = useMapMarkers(mapRef as any);
 
-      syncMarkers(makeDays([makePlace()]));
+      await syncMarkers(makeDays([makePlace()]));
 
       expect(map.on).toHaveBeenCalledWith('moveend', expect.any(Function));
       expect(map.on).toHaveBeenCalledWith('zoom', expect.any(Function));
@@ -186,14 +186,14 @@ describe('useMapMarkers composable', () => {
       const mapRef = ref(map1) as any;
       const { syncMarkers } = useMapMarkers(mapRef);
 
-      syncMarkers(makeDays([makePlace()]));
+      await syncMarkers(makeDays([makePlace()]));
       expect(map1.on).toHaveBeenCalledWith('moveend', expect.any(Function));
 
       // Switch to a new map
       const map2 = makeMockMap();
       mapRef.value = map2;
 
-      syncMarkers(makeDays([makePlace({ id: 'p-2' })]));
+      await syncMarkers(makeDays([makePlace({ id: 'p-2' })]));
 
       // Old map should have off called (unbindEvents)
       expect(map1.off).toHaveBeenCalledWith('moveend', expect.any(Function));
@@ -208,10 +208,10 @@ describe('useMapMarkers composable', () => {
       const mapRef = ref(map);
       const { syncMarkers } = useMapMarkers(mapRef as any);
 
-      syncMarkers(makeDays([makePlace()]));
+      await syncMarkers(makeDays([makePlace()]));
       const onCallCount = map.on.mock.calls.length;
 
-      syncMarkers(makeDays([makePlace({ id: 'p-2' })]));
+      await syncMarkers(makeDays([makePlace({ id: 'p-2' })]));
 
       // map.on should not have been called additional times
       expect(map.on.mock.calls.length).toBe(onCallCount);
@@ -227,7 +227,7 @@ describe('useMapMarkers composable', () => {
       const mapRef = ref(map);
       const { syncMarkers } = useMapMarkers(mapRef as any);
 
-      syncMarkers(makeDays([makePlace()]));
+      await syncMarkers(makeDays([makePlace()]));
       const markerCountAfterSync = MockMarker.mock.results.length;
 
       // Find and invoke the moveend handler
@@ -251,7 +251,7 @@ describe('useMapMarkers composable', () => {
       const { syncMarkers } = useMapMarkers(mapRef as any);
 
       // First sync with shouldAnimate=false (data-driven update), no animation
-      syncMarkers(makeDays([makePlace()]));
+      await syncMarkers(makeDays([makePlace()]));
 
       // Now trigger a moveend to force render with shouldAnimate=true
       // First change the bounds so features differ
@@ -290,12 +290,12 @@ describe('useMapMarkers composable', () => {
       const { syncMarkers } = useMapMarkers(mapRef as any);
 
       const place1 = makePlace({ id: 'p-1', coordinates: [2.29, 48.85] });
-      syncMarkers(makeDays([place1]));
+      await syncMarkers(makeDays([place1]));
 
       const firstMarker = MockMarker.mock.results[0].value;
 
       // Second sync removes old marker without animation
-      syncMarkers(makeDays([makePlace({ id: 'p-2', coordinates: [12.49, 41.89] })]));
+      await syncMarkers(makeDays([makePlace({ id: 'p-2', coordinates: [12.49, 41.89] })]));
 
       // marker.remove called directly (not via onfinish)
       expect(firstMarker.remove).toHaveBeenCalled();
@@ -311,7 +311,7 @@ describe('useMapMarkers composable', () => {
       const { syncMarkers } = useMapMarkers(mapRef as any);
 
       const place = makePlace({ name: '<script>alert(1)</script>', address: 'test' });
-      syncMarkers(makeDays([place]));
+      await syncMarkers(makeDays([place]));
 
       // Verify Popup was created and setHTML was called
       const { MockPopup } = await import('../../mocks/mapbox-gl');
@@ -342,7 +342,7 @@ describe('useMapMarkers composable', () => {
         makePlace({ id: `p-${i}`, order: i, coordinates: [2.2945, 48.8584] }),
       );
 
-      syncMarkers(makeDays(places));
+      await syncMarkers(makeDays(places));
 
       // Find a cluster marker (one with a 44px wide element)
       let clusterEl: HTMLElement | null = null;
@@ -396,7 +396,7 @@ describe('useMapMarkers composable', () => {
       const mapRef = ref(map);
       const { fitAllPlaces } = useMapMarkers(mapRef as any);
 
-      fitAllPlaces([]);
+      await fitAllPlaces([]);
 
       expect(map.fitBounds).not.toHaveBeenCalled();
       expect(map.flyTo).not.toHaveBeenCalled();
@@ -408,7 +408,7 @@ describe('useMapMarkers composable', () => {
       const mapRef = ref(map);
       const { fitAllPlaces } = useMapMarkers(mapRef as any);
 
-      fitAllPlaces([makePlace()]);
+      await fitAllPlaces([makePlace()]);
 
       expect(map.flyTo).toHaveBeenCalledWith({
         center: [2.2945, 48.8584],
@@ -426,7 +426,7 @@ describe('useMapMarkers composable', () => {
 
       const placeA = makePlace({ id: 'a', coordinates: [2.29, 48.85] });
       const placeB = makePlace({ id: 'b', coordinates: [12.49, 41.89] });
-      fitAllPlaces([placeA, placeB]);
+      await fitAllPlaces([placeA, placeB]);
 
       expect(map.fitBounds).toHaveBeenCalledWith(
         expect.anything(),
@@ -439,7 +439,7 @@ describe('useMapMarkers composable', () => {
       const mapRef = ref(null);
       const { fitAllPlaces } = useMapMarkers(mapRef as any);
 
-      fitAllPlaces([makePlace()]);
+      await fitAllPlaces([makePlace()]);
       // Should not throw
     });
   });
@@ -455,7 +455,7 @@ describe('useMapMarkers composable', () => {
 
       // Initial sync with a place in wide bounds
       const place = makePlace({ id: 'p-1', coordinates: [2.29, 48.85] });
-      syncMarkers(makeDays([place]));
+      await syncMarkers(makeDays([place]));
 
       // Now change bounds to exclude that place, trigger moveend (shouldAnimate=true)
       map.getBounds.mockReturnValue({
@@ -491,7 +491,7 @@ describe('useMapMarkers composable', () => {
       const { syncMarkers } = useMapMarkers(mapRef as any);
 
       const place = makePlace({ coordinates: [2.29, 48.85] });
-      syncMarkers(makeDays([place]));
+      await syncMarkers(makeDays([place]));
 
       const markersAfterSync = MockMarker.mock.results.length;
 
@@ -527,7 +527,7 @@ describe('useMapMarkers composable', () => {
       const places = Array.from({ length: 5 }, (_, i) =>
         makePlace({ id: `p-${i}`, order: i, coordinates: [2.29 + i * 0.001, 48.85] }),
       );
-      syncMarkers(makeDays(places));
+      await syncMarkers(makeDays(places));
 
       // Now zoom in to break cluster into points
       map.getZoom.mockReturnValue(16);
@@ -556,7 +556,7 @@ describe('useMapMarkers composable', () => {
       const places = Array.from({ length: 5 }, (_, i) =>
         makePlace({ id: `p-${i}`, order: i, coordinates: [2.29 + i * 0.001, 48.85] }),
       );
-      syncMarkers(makeDays(places));
+      await syncMarkers(makeDays(places));
 
       // Now zoom out to merge points into cluster
       map.getZoom.mockReturnValue(3);
@@ -578,7 +578,7 @@ describe('useMapMarkers composable', () => {
       // syncMarkers sets shouldAnimate=false and calls render
       // render should early-return due to null bounds
       const place = makePlace();
-      syncMarkers(makeDays([place]));
+      await syncMarkers(makeDays([place]));
 
       // No markers since bounds are null
       expect(MockMarker).not.toHaveBeenCalled();
@@ -594,7 +594,7 @@ describe('useMapMarkers composable', () => {
       const { syncMarkers } = useMapMarkers(mapRef as any);
 
       const place = makePlace({ order: 3 });
-      syncMarkers(makeDays([place]));
+      await syncMarkers(makeDays([place]));
 
       // Marker constructor was called with an element option
       const constructorOpts = MockMarker.mock.calls[0]?.[0];
@@ -625,7 +625,7 @@ describe('useMapMarkers composable', () => {
       const places = Array.from({ length: 5 }, (_, i) =>
         makePlace({ id: `p-${i}`, order: i, coordinates: [2.2945, 48.8584] }),
       );
-      syncMarkers(makeDays(places));
+      await syncMarkers(makeDays(places));
 
       // Check if any marker was created with a 44px element
       let found44px = false;
