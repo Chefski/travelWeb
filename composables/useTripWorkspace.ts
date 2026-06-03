@@ -5,15 +5,18 @@ import { useMapMarkers } from '~/composables/useMapMarkers';
 import { useTripSharing } from '~/composables/useTripSharing';
 import { useTripStore } from '~/stores/tripStore';
 import type { Place } from '~/types/trip';
-import type PlaceSearch from '~/components/PlaceSearch.vue';
 import type WorldMap from '~/components/WorldMap.vue';
+
+interface PlaceSearchExpose {
+  focus: () => void
+}
 
 export function useTripWorkspace() {
   const store = useTripStore();
   const colorMode = useColorMode();
 
   const worldMapRef = ref<InstanceType<typeof WorldMap> | null>(null);
-  const placeSearchRef = ref<InstanceType<typeof PlaceSearch> | null>(null);
+  const placeSearchRef = ref<PlaceSearchExpose | null>(null);
   const mapRef = computed(() => worldMapRef.value?.map ?? null);
 
   const highlightedPlaceId = ref<string | null>(null);
