@@ -65,9 +65,9 @@ function dayTotalTime(index: number): string {
       :key="day.date"
       role="tab"
       :aria-selected="index === store.selectedDayIndex"
-      class="group/tab flex flex-col items-center px-3 py-2 rounded-lg min-w-[80px] transition-all text-sm shrink-0 snap-center relative"
+      class="group/tab flex min-w-[84px] shrink-0 snap-center flex-col items-center rounded-md px-3 py-2 text-sm transition-colors relative"
       :class="index === store.selectedDayIndex
-        ? 'text-white shadow-md scale-105'
+        ? 'text-white shadow-sm'
         : 'bg-muted text-muted-foreground hover:bg-muted/80'"
       :style="index === store.selectedDayIndex ? { backgroundColor: getColor(index) } : {}"
       @click="store.selectDay(index)"

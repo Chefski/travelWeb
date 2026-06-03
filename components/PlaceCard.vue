@@ -9,7 +9,6 @@ import {
   BuildingIcon, MapPinIcon, NavigationIcon, DollarSignIcon, ExternalLinkIcon, StarIcon,
 } from 'lucide-vue-next';
 import { useTripStore } from '~/stores/tripStore';
-import { DAY_COLORS } from '~/types/trip';
 import type { Place } from '~/types/trip';
 import { toast } from 'vue-sonner';
 
@@ -342,7 +341,7 @@ function setRating(value: number) {
             >
               <span
                 class="h-2.5 w-2.5 rounded-full shrink-0"
-                :style="{ backgroundColor: DAY_COLORS[(i - 1) % DAY_COLORS.length] }"
+                :style="{ backgroundColor: store.getDayColor(i - 1) }"
               />
               Day {{ i }}
             </button>
@@ -360,7 +359,7 @@ function setRating(value: number) {
               <CopyIcon class="h-3 w-3 text-muted-foreground" />
               <span
                 class="h-2.5 w-2.5 rounded-full shrink-0"
-                :style="{ backgroundColor: DAY_COLORS[(i - 1) % DAY_COLORS.length] }"
+                :style="{ backgroundColor: store.getDayColor(i - 1) }"
               />
               Day {{ i }}
             </button>

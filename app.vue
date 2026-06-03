@@ -1,143 +1,52 @@
 <script setup lang="ts">
-import { ref, watch, computed, watchEffect, defineAsyncComponent } from 'vue';
+import { defineAsyncComponent } from 'vue';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
-import { toast } from 'vue-sonner';
-import { MapIcon, ListIcon, SunIcon, MoonIcon, KeyboardIcon, LayoutListIcon, ClockIcon } from 'lucide-vue-next';
-import { useTripStore } from '~/stores/tripStore';
-import { useTripSharing } from '~/composables/useTripSharing';
-import { useMapMarkers } from '~/composables/useMapMarkers';
-import { useKeyboardShortcuts } from '~/composables/useKeyboardShortcuts';
-import type { Place } from '~/types/trip';
+import {
+  CalendarPlusIcon,
+  ClockIcon,
+  KeyboardIcon,
+  LayoutListIcon,
+  ListIcon,
+  MapIcon,
+  MoonIcon,
+  PanelLeftIcon,
+  SunIcon,
+} from 'lucide-vue-next';
+import { useTripWorkspace } from '~/composables/useTripWorkspace';
 
 const SpeedInsights = defineAsyncComponent(() =>
   import('@vercel/speed-insights/vue').then(m => m.SpeedInsights),
 );
+const enableSpeedInsights = typeof window !== 'undefined'
+  && !['localhost', '127.0.0.1'].includes(window.location.hostname);
 
-const store = useTripStore();
-const colorMode = useColorMode();
-
-// Check for shared trip in URL
-if (typeof window !== 'undefined') {
-  const { decodeTripFromUrl, clearShareHash } = useTripSharing();
-  const sharedTrip = decodeTripFromUrl();
-  if (sharedTrip) {
-    store.createTrip(sharedTrip.name, sharedTrip.startDate, sharedTrip.endDate);
-    if (store.trip) {
-      store.trip = { ...store.trip, days: sharedTrip.days };
-    }
-    clearShareHash();
-    toast(`Imported shared trip: "${sharedTrip.name}"`);
-  }
-}
-
-function toggleDarkMode() {
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark';
-}
-
-const worldMapRef = ref<InstanceType<typeof WorldMap> | null>(null);
-const mapRef = computed(() => worldMapRef.value?.map ?? null);
-const highlightedPlaceId = ref<string | null>(null);
-
-function onMarkerClicked(placeId: string, dayIndex: number) {
-  if (store.selectedDayIndex !== dayIndex) {
-    store.selectDay(dayIndex);
-  }
-  highlightedPlaceId.value = placeId;
-  setTimeout(() => {
-    highlightedPlaceId.value = null;
-  }, 2000);
-}
-
-const { syncMarkers, flyToPlace, fitAllPlaces } = useMapMarkers(mapRef, onMarkerClicked, store.getDayColor);
-
-const showSetupDialog = ref(!store.trip);
-const showEditDialog = ref(false);
-const showExportDialog = ref(false);
-const showShortcutsHelp = ref(false);
-const showTripSelector = ref(false);
-const showMap = ref(false);
-const viewMode = ref<'list' | 'timeline'>('list');
-const placeSearchRef = ref<InstanceType<typeof PlaceSearch> | null>(null);
-
-useKeyboardShortcuts({
-  onFocusSearch: () => placeSearchRef.value?.focus(),
-  onEditTrip: () => { showEditDialog.value = true; },
-  onNewTrip,
-  onToggleExport: () => { showExportDialog.value = true; },
+const {
+  store,
+  colorMode,
+  worldMapRef,
+  placeSearchRef,
+  highlightedPlaceId,
+  showSetupDialog,
+  showEditDialog,
+  showExportDialog,
   showShortcutsHelp,
-});
-
-// Sync markers whenever trip data or map readiness changes
-watchEffect(() => {
-  const map = mapRef.value;
-  const trip = store.trip;
-
-  if (!map || !trip) {
-    syncMarkers([]);
-    return;
-  }
-
-  const allDayData = trip.days.map((day, idx) => ({
-    dayIndex: idx,
-    places: day.places,
-  }));
-  syncMarkers(allDayData, store.selectedDayIndex);
-});
-
-// Fit map to current day's places when switching days
-watch(
-  () => store.selectedDayIndex,
-  () => {
-    if (store.currentDay && store.currentDay.places.length > 0) {
-      fitAllPlaces(store.currentDay.places);
-    }
-  },
-);
-
-function onPlaceSelected(place: Place) {
-  flyToPlace(place.coordinates);
-  toast(`Added "${place.name}" to Day ${store.selectedDayIndex + 1}`);
-}
-
-function onPlaceClicked(place: Place) {
-  flyToPlace(place.coordinates);
-}
-
-async function onTripCreated() {
-  showSetupDialog.value = false;
-  toast('Trip created! Start adding places.');
-  const { default: confetti } = await import('canvas-confetti');
-  confetti({
-    particleCount: 100,
-    spread: 70,
-    origin: { y: 0.6 },
-    colors: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b'],
-  });
-}
-
-function onNewTrip() {
-  showTripSelector.value = true;
-}
-
-function onCreateNewFromSelector() {
-  showSetupDialog.value = true;
-}
-
-function onStyleChanged() {
-  if (!store.trip || !mapRef.value) return;
-  const allDayData = store.trip.days.map((day, idx) => ({
-    dayIndex: idx,
-    places: day.places,
-  }));
-  syncMarkers(allDayData, store.selectedDayIndex);
-}
+  showTripSelector,
+  showMap,
+  viewMode,
+  toggleDarkMode,
+  onPlaceSelected,
+  onPlaceClicked,
+  onTripCreated,
+  onCreateNewFromSelector,
+  onStyleChanged,
+} = useTripWorkspace();
 </script>
 
 <template>
-  <div class="h-screen bg-background font-outfit overflow-hidden">
-    <SpeedInsights />
+  <div class="h-screen bg-background font-outfit overflow-hidden text-foreground">
+    <SpeedInsights v-if="enableSpeedInsights" />
     <Toaster position="top-right" />
     <LazyTripSetupDialog v-model:open="showSetupDialog" @created="onTripCreated" />
     <LazyTripEditDialog v-model:open="showEditDialog" />
@@ -148,53 +57,91 @@ function onStyleChanged() {
     <div class="flex h-full">
       <!-- Left panel -->
       <div
-        class="w-full md:w-[45%] xl:w-[40%] flex flex-col gap-3 min-h-0 px-4 md:px-6 py-4 md:py-6 border-r border-border"
+        class="w-full md:w-[430px] xl:w-[500px] flex flex-col min-h-0 border-r border-border bg-background/95"
         :class="{ 'hidden': showMap, 'flex': !showMap }"
       >
-        <div class="flex justify-end">
-          <Button variant="ghost" size="icon" class="h-8 w-8" aria-label="Toggle dark mode" @click="toggleDarkMode">
-            <SunIcon v-if="colorMode.value === 'dark'" class="h-4 w-4" />
-            <MoonIcon v-else class="h-4 w-4" />
-          </Button>
+        <div class="flex items-center justify-between gap-2 border-b border-border px-4 py-3 md:px-5">
+          <div class="flex items-center gap-2 text-sm font-semibold">
+            <span class="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <MapIcon class="h-4 w-4" />
+            </span>
+            <span>TravelWeb</span>
+          </div>
+
+          <div class="flex items-center gap-1">
+            <Button
+              v-if="store.trip"
+              variant="ghost"
+              size="icon"
+              class="h-8 w-8"
+              aria-label="My trips"
+              @click="showTripSelector = true"
+            >
+              <PanelLeftIcon class="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" class="h-8 w-8" aria-label="Toggle dark mode" @click="toggleDarkMode">
+              <SunIcon v-if="colorMode.value === 'dark'" class="h-4 w-4" />
+              <MoonIcon v-else class="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <template v-if="store.trip">
-          <TripHeader @new-trip="onNewTrip" @edit-trip="showEditDialog = true" @export-trip="showExportDialog = true" />
-          <TripStats />
-          <DayTabs />
-          <div class="flex items-center justify-between">
-            <PlaceSearch ref="placeSearchRef" class="flex-1" @place-selected="onPlaceSelected" />
-            <Button
-              variant="ghost"
-              size="icon"
-              class="h-8 w-8 shrink-0 ml-1"
-              :aria-label="viewMode === 'list' ? 'Switch to timeline view' : 'Switch to list view'"
-              @click="viewMode = viewMode === 'list' ? 'timeline' : 'list'"
-            >
-              <LayoutListIcon v-if="viewMode === 'list'" class="h-4 w-4" />
-              <ClockIcon v-else class="h-4 w-4" />
-            </Button>
+          <div class="flex min-h-0 flex-1 flex-col gap-3 px-4 py-4 md:px-5 md:py-5">
+            <TripHeader @new-trip="showTripSelector = true" @edit-trip="showEditDialog = true" @export-trip="showExportDialog = true" />
+            <TripStats />
+            <DayTabs />
+            <div class="flex items-center gap-2">
+              <PlaceSearch ref="placeSearchRef" class="flex-1" @place-selected="onPlaceSelected" />
+              <div class="flex rounded-md border border-input bg-muted/50 p-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8 rounded-sm"
+                  :class="viewMode === 'list' ? 'bg-background shadow-sm' : 'text-muted-foreground'"
+                  aria-label="List view"
+                  @click="viewMode = 'list'"
+                >
+                  <LayoutListIcon class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8 rounded-sm"
+                  :class="viewMode === 'timeline' ? 'bg-background shadow-sm' : 'text-muted-foreground'"
+                  aria-label="Timeline view"
+                  @click="viewMode = 'timeline'"
+                >
+                  <ClockIcon class="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <ScrollArea class="min-h-0 flex-1 pr-1">
+              <Transition name="slide-fade" mode="out-in">
+                <PlaceList v-if="viewMode === 'list'" :key="'list-' + store.selectedDayIndex" :highlighted-place-id="highlightedPlaceId" @place-clicked="onPlaceClicked" />
+                <DayTimeline v-else :key="'timeline-' + store.selectedDayIndex" @place-clicked="onPlaceClicked" />
+              </Transition>
+            </ScrollArea>
           </div>
-          <ScrollArea class="flex-1">
-            <Transition name="slide-fade" mode="out-in">
-              <PlaceList v-if="viewMode === 'list'" :key="'list-' + store.selectedDayIndex" :highlighted-place-id="highlightedPlaceId" @place-clicked="onPlaceClicked" />
-              <DayTimeline v-else :key="'timeline-' + store.selectedDayIndex" @place-clicked="onPlaceClicked" />
-            </Transition>
-          </ScrollArea>
         </template>
 
         <template v-else>
-          <div class="flex flex-col items-center justify-center h-full gap-4">
-            <MapIcon class="h-12 w-12 text-muted-foreground opacity-40" />
-            <p class="text-lg text-muted-foreground">No trip planned yet</p>
-            <Button @click="showSetupDialog = true">Create a Trip</Button>
+          <div class="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
+            <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+              <CalendarPlusIcon class="h-7 w-7" />
+            </div>
+            <div>
+              <p class="text-lg font-semibold">Start a trip plan</p>
+              <p class="mt-1 text-sm text-muted-foreground">Create a date-based itinerary, then add places to each day.</p>
+            </div>
+            <Button @click="showSetupDialog = true">Create Trip</Button>
           </div>
         </template>
       </div>
 
       <!-- Right panel -->
       <div
-        class="h-full md:block md:flex-1"
+        class="h-full bg-muted/30 md:block md:flex-1"
         :class="showMap ? 'block flex-1' : 'hidden'"
       >
         <LazyWorldMap ref="worldMapRef" @style-changed="onStyleChanged" />

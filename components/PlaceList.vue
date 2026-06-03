@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, computed, defineAsyncComponent } from 'vue';
-
-const VueDraggable = defineAsyncComponent(() =>
-  import('vue-draggable-plus').then(m => m.VueDraggable),
-);
 import { MapPinIcon } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
+import { VueDraggable } from 'vue-draggable-plus';
 import { toast } from 'vue-sonner';
+import PlaceCard from '~/components/PlaceCard.vue';
 import { useTripStore } from '~/stores/tripStore';
-import { DAY_COLORS } from '~/types/trip';
 import type { Place } from '~/types/trip';
 
 const props = defineProps<{
@@ -36,7 +33,7 @@ watch(
   { immediate: true, deep: true },
 );
 
-const dayColor = computed(() => DAY_COLORS[store.selectedDayIndex % DAY_COLORS.length]);
+const dayColor = computed(() => store.getDayColor(store.selectedDayIndex));
 
 function onDragEnd() {
   store.reorderPlaces(store.selectedDayIndex, localPlaces.value);
@@ -81,16 +78,16 @@ function onRemovePlace(placeId: string) {
   </div>
 
   <Transition name="fade">
-    <div v-if="localPlaces.length === 0" class="flex flex-col items-center justify-center py-12 text-muted-foreground">
-      <MapPinIcon class="h-8 w-8 mb-2 opacity-40 animate-bounce-slow" />
+    <div v-if="localPlaces.length === 0" class="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-12 text-muted-foreground">
+      <MapPinIcon class="h-8 w-8 mb-2 opacity-40" />
       <p class="text-sm font-medium">No places added yet</p>
-      <p class="text-xs mb-4">Search and add places above</p>
+      <p class="text-xs mb-4">Search above to build this day.</p>
       <div class="flex flex-wrap gap-2 justify-center max-w-[280px]">
-        <span class="text-xs bg-muted px-2 py-1 rounded-full cursor-default opacity-60">🏛️ Museums</span>
-        <span class="text-xs bg-muted px-2 py-1 rounded-full cursor-default opacity-60">🍜 Restaurants</span>
-        <span class="text-xs bg-muted px-2 py-1 rounded-full cursor-default opacity-60">🌳 Parks</span>
-        <span class="text-xs bg-muted px-2 py-1 rounded-full cursor-default opacity-60">🛍️ Shopping</span>
-        <span class="text-xs bg-muted px-2 py-1 rounded-full cursor-default opacity-60">📸 Viewpoints</span>
+        <span class="text-xs bg-background px-2 py-1 rounded-md cursor-default border">Museums</span>
+        <span class="text-xs bg-background px-2 py-1 rounded-md cursor-default border">Restaurants</span>
+        <span class="text-xs bg-background px-2 py-1 rounded-md cursor-default border">Parks</span>
+        <span class="text-xs bg-background px-2 py-1 rounded-md cursor-default border">Shopping</span>
+        <span class="text-xs bg-background px-2 py-1 rounded-md cursor-default border">Viewpoints</span>
       </div>
     </div>
   </Transition>
@@ -108,11 +105,4 @@ function onRemovePlace(placeId: string) {
   opacity: 0;
 }
 
-@keyframes bounce-slow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-.animate-bounce-slow {
-  animation: bounce-slow 3s ease-in-out infinite;
-}
 </style>

@@ -4,13 +4,22 @@ import { useLocalStorage } from '@vueuse/core';
 import type { Trip, TripDay, Place } from '~/types/trip';
 import { DAY_COLORS } from '~/types/trip';
 
+function readStoredJson<T>(value: string | null | undefined, fallback: T): T {
+  if (!value || value === 'undefined') return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 export const useTripStore = defineStore('trip', () => {
   const trips = useLocalStorage<Trip[]>('itinerary-trips', [], {
-    serializer: { read: (v: string) => JSON.parse(v), write: (v: Trip[]) => JSON.stringify(v) },
+    serializer: { read: (v: string) => readStoredJson<Trip[]>(v, []), write: (v: Trip[]) => JSON.stringify(v) },
   });
 
   const currentTripId = useLocalStorage<string | null>('itinerary-current-trip-id', null, {
-    serializer: { read: (v: string) => JSON.parse(v), write: (v: string | null) => JSON.stringify(v) },
+    serializer: { read: (v: string) => readStoredJson<string | null>(v, null), write: (v: string | null) => JSON.stringify(v) },
   });
 
   // Migrate old single-trip localStorage format
@@ -103,7 +112,12 @@ export const useTripStore = defineStore('trip', () => {
   }
 
   function selectDay(index: number) {
-    selectedDayIndex.value = index;
+    if (!trip.value || trip.value.days.length === 0) {
+      selectedDayIndex.value = 0;
+      return;
+    }
+    const nextIndex = Number.isFinite(index) ? Math.trunc(index) : 0;
+    selectedDayIndex.value = Math.min(Math.max(0, nextIndex), trip.value.days.length - 1);
   }
 
   function addPlace(place: Omit<Place, 'id' | 'order' | 'notes' | 'estimatedTime' | 'cost' | 'rating'>) {

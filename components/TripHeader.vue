@@ -13,14 +13,12 @@ const { flag } = useCountryFlag();
 const emit = defineEmits<{ 'new-trip': []; 'edit-trip': []; 'export-trip': [] }>();
 
 const GRADIENTS = [
-  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-  'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-  'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-  'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-  'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
-  'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-  'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+  'linear-gradient(135deg, #0f766e 0%, #2563eb 100%)',
+  'linear-gradient(135deg, #b45309 0%, #dc2626 100%)',
+  'linear-gradient(135deg, #047857 0%, #0891b2 100%)',
+  'linear-gradient(135deg, #4338ca 0%, #be123c 100%)',
+  'linear-gradient(135deg, #365314 0%, #ca8a04 100%)',
+  'linear-gradient(135deg, #0f172a 0%, #64748b 100%)',
 ];
 
 const hasImage = computed(() => {
@@ -65,12 +63,17 @@ const dateDisplay = computed(() => {
   };
   return `${fmt(store.trip.startDate)} - ${fmt(store.trip.endDate)}`;
 });
+
+const durationDisplay = computed(() => {
+  const days = store.trip?.days.length ?? 0;
+  return `${Math.max(0, days - 1)}N ${days}D`;
+});
 </script>
 
 <template>
   <div v-if="store.trip">
     <div
-      class="group relative rounded-xl overflow-hidden h-[120px] md:h-[180px] cursor-pointer"
+      class="group relative rounded-lg overflow-hidden h-[120px] md:h-[168px] cursor-pointer border border-border"
       role="button"
       tabindex="0"
       aria-label="Edit trip cover image"
@@ -90,13 +93,13 @@ const dateDisplay = computed(() => {
         :style="{ background: fallbackGradient }"
       />
       <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
-        <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur-sm rounded-full p-2.5 shadow-lg">
+        <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur-sm rounded-md p-2.5 shadow-lg">
           <PencilIcon class="h-4 w-4 text-gray-800" />
         </div>
       </div>
       <button
         v-if="!hasImage"
-        class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white"
+        class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur-sm rounded-md p-2 shadow-lg hover:bg-white"
         aria-label="Shuffle gradient"
         @click="cycleGradient"
       >
@@ -104,10 +107,10 @@ const dateDisplay = computed(() => {
       </button>
     </div>
     <div class="mt-3">
-      <div class="flex items-center justify-between">
-        <h2 class="text-xl md:text-2xl font-semibold">{{ flag }} {{ store.trip.name }}</h2>
-        <div class="flex items-center gap-2">
-          <Badge variant="secondary">{{ store.trip.days.length - 1 }}N {{ store.trip.days.length }}D</Badge>
+      <div class="flex items-start justify-between gap-3">
+        <h2 class="min-w-0 truncate text-xl md:text-2xl font-semibold">{{ flag }} {{ store.trip.name }}</h2>
+        <div class="flex shrink-0 items-center gap-1">
+          <Badge variant="secondary">{{ durationDisplay }}</Badge>
           <Button variant="ghost" size="icon" class="h-8 w-8" aria-label="Export trip" @click="emit('export-trip')">
             <ShareIcon class="h-4 w-4" />
           </Button>

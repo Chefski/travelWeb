@@ -10,10 +10,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { RangeCalendar } from '@/components/ui/range-calendar';
 import { CalendarDate, type DateValue } from '@internationalized/date';
-import { CalendarIcon, ImageIcon, XIcon } from 'lucide-vue-next';
+import { ImageIcon, XIcon } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
 import { useTripStore } from '~/stores/tripStore';
 import { useImageUpload } from '~/composables/useImageUpload';
@@ -85,12 +83,22 @@ watch(coverImage, (val) => {
 });
 
 const canSave = computed(() => {
-  return tripName.value.trim().length > 0 && dateRange.value.start && dateRange.value.end;
+  return tripName.value.trim().length > 0
+    && !!dateRange.value.start
+    && !!dateRange.value.end
+    && formatDate(dateRange.value.start) <= formatDate(dateRange.value.end);
 });
 
 function formatDate(d: DateValue | undefined): string {
   if (!d) return '';
   return `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
+}
+
+function parseDateInput(value: string): CalendarDate | undefined {
+  if (!value) return undefined;
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return undefined;
+  return new CalendarDate(year, month, day);
 }
 
 function formatDisplay(d: DateValue | undefined): string {
@@ -107,6 +115,28 @@ const dateLabel = computed(() => {
     return `${formatDisplay(dateRange.value.start)} - ...`;
   }
   return 'Pick your travel dates';
+});
+
+const startDateInput = computed({
+  get: () => formatDate(dateRange.value.start),
+  set: (value: string) => {
+    const start = parseDateInput(value);
+    const end = dateRange.value.end;
+    dateRange.value = {
+      start,
+      end: start && end && formatDate(end) < formatDate(start) ? start : end,
+    };
+  },
+});
+
+const endDateInput = computed({
+  get: () => formatDate(dateRange.value.end),
+  set: (value: string) => {
+    dateRange.value = {
+      ...dateRange.value,
+      end: parseDateInput(value),
+    };
+  },
 });
 
 function onSave() {
@@ -137,22 +167,14 @@ function onSave() {
         </div>
 
         <div class="grid gap-2">
-          <label for="edit-trip-dates" class="text-sm font-medium">Travel dates</label>
-          <Popover>
-            <PopoverTrigger as-child>
-              <Button id="edit-trip-dates" variant="outline" class="justify-start text-left font-normal">
-                <CalendarIcon class="h-4 w-4" />
-                {{ dateLabel }}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent class="w-auto p-0" align="start">
-              <RangeCalendar
-                v-model="dateRange"
-                :number-of-months="2"
-                class="rounded-md border"
-              />
-            </PopoverContent>
-          </Popover>
+          <div class="flex items-center justify-between gap-2">
+            <label for="edit-trip-start-date" class="text-sm font-medium">Travel dates</label>
+            <span class="text-xs text-muted-foreground">{{ dateLabel }}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <Input id="edit-trip-start-date" v-model="startDateInput" type="date" aria-label="Start date" />
+            <Input id="edit-trip-end-date" v-model="endDateInput" type="date" aria-label="End date" :min="startDateInput || undefined" />
+          </div>
         </div>
 
         <div class="grid gap-2">

@@ -5,7 +5,6 @@ import {
   BuildingIcon, MapPinIcon, ClockIcon, DollarSignIcon, StarIcon,
 } from 'lucide-vue-next';
 import { useTripStore } from '~/stores/tripStore';
-import { DAY_COLORS } from '~/types/trip';
 import type { Place } from '~/types/trip';
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -37,7 +36,7 @@ function getCategoryIcon(category: string) {
 
 const emit = defineEmits<{ 'place-clicked': [place: Place] }>();
 const store = useTripStore();
-const dayColor = computed(() => DAY_COLORS[store.selectedDayIndex % DAY_COLORS.length]);
+const dayColor = computed(() => store.getDayColor(store.selectedDayIndex));
 const places = computed(() => store.currentDay?.places ?? []);
 </script>
 
@@ -104,9 +103,9 @@ const places = computed(() => store.currentDay?.places ?? []);
   </div>
 
   <!-- Empty state -->
-  <div v-else class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+  <div v-else class="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-12 text-muted-foreground">
     <MapPinIcon class="h-8 w-8 mb-2 opacity-40" />
     <p class="text-sm font-medium">No places added yet</p>
-    <p class="text-xs">Search and add places to see your timeline</p>
+    <p class="text-xs">Add places to see this day as a timeline.</p>
   </div>
 </template>

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 import { createTestStore } from '../../helpers/store-helper';
 import { SAMPLE_PLACE, SAMPLE_PLACE_2 } from '../../helpers/fixtures';
 import type { useTripStore } from '~/stores/tripStore';
@@ -48,6 +49,17 @@ describe('tripStore', () => {
       expect(store.selectedDayIndex).toBe(0);
     });
 
+    it('recovers from invalid persisted storage values', () => {
+      localStorage.setItem('itinerary-trips', 'not-json');
+      localStorage.setItem('itinerary-current-trip-id', 'not-json');
+      setActivePinia(createPinia());
+
+      const recoveredStore = createTestStore();
+
+      expect(recoveredStore.trips).toEqual([]);
+      expect(recoveredStore.trip).toBeNull();
+    });
+
     it('assigns a UUID as the trip id', () => {
       store.createTrip('ID Test', '2026-06-01', '2026-06-01');
 
@@ -77,6 +89,20 @@ describe('tripStore', () => {
 
       expect(store.trip).toBeNull();
       expect(store.allPlaces).toHaveLength(0);
+    });
+  });
+
+  // ── selectDay ───────────────────────────────────────────────
+
+  describe('selectDay', () => {
+    it('clamps invalid day indexes to the current trip range', () => {
+      store.createTrip('Paris', '2026-06-01', '2026-06-03');
+
+      store.selectDay(99);
+      expect(store.selectedDayIndex).toBe(2);
+
+      store.selectDay(-10);
+      expect(store.selectedDayIndex).toBe(0);
     });
   });
 

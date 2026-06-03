@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { MapPinIcon, CalendarIcon, BarChart3Icon } from 'lucide-vue-next';
+import { MapPinIcon, CalendarIcon, BarChart3Icon, DollarSignIcon } from 'lucide-vue-next';
 import { useTripStore } from '~/stores/tripStore';
 import { useWeather } from '~/composables/useWeather';
 
@@ -34,7 +34,7 @@ const countdown = computed(() => {
     return `In ${diffDays} day${diffDays === 1 ? '' : 's'}`;
   }
   if (today <= end) {
-    return 'Happening now!';
+    return 'Happening now';
   }
   return 'Trip ended';
 });
@@ -49,7 +49,7 @@ const countdown = computed(() => {
 
     <span class="inline-flex items-center gap-1 bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full">
       <MapPinIcon class="h-3 w-3" />
-      {{ currentDayPlaces }} today
+      {{ currentDayPlaces }} this day
     </span>
 
     <span class="inline-flex items-center gap-1 bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full">
@@ -74,7 +74,8 @@ const countdown = computed(() => {
       v-if="totalCost > 0"
       class="inline-flex items-center gap-1 bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full"
     >
-      💰 ${{ totalCost.toFixed(0) }} total
+      <DollarSignIcon class="h-3 w-3" />
+      {{ totalCost.toFixed(0) }} total
     </span>
   </div>
 </template>
